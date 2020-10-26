@@ -1,0 +1,44 @@
+{
+    "metadata": {
+        ".zattrs": {
+            "conversion_date": "2020-10-26",
+            "name": "MeerKAT_avg_zcoeffs_LBand_lookup",
+            "write_zarr_time": 0.005058765411376953
+        },
+        ".zgroup": {
+            "zarr_format": 2
+        },
+        "ZC/.zarray": {
+            "chunks": [
+                4,
+                16,
+                66
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 2,
+                "cname": "zstd",
+                "id": "blosc",
+                "shuffle": 0
+            },
+            "dtype": "<c16",
+            "fill_value": null,
+            "filters": null,
+            "order": "C",
+            "shape": [
+                4,
+                16,
+                66
+            ],
+            "zarr_format": 2
+        },
+        "ZC/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "pol",
+                "chan",
+                "coef_indx"
+            ]
+        }
+    },
+    "zarr_consolidated_format": 1
+}
