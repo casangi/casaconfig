@@ -35,7 +35,7 @@ def csv_to_zarr(filename,freq_to_hertz):
     zc_dataset.attrs['name'] = 'MeerKAT_avg_zcoeffs_LBand_lookup'
     zc_dataset.attrs['conversion_date'] = str(date.today())
     
-    write_zarr(zc_dataset,filename.split('.')[0]+'.zc.zarr')
+    write_zarr(zc_dataset,filename.split('.')[0]+'.zpc.zarr')
     
 '''
 if __name__ == '__main__':
