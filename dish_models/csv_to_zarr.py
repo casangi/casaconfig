@@ -31,6 +31,7 @@ def csv_to_zarr(filename,freq_to_hertz):
     
     zc_dataset = xr.Dataset()
     coords = {'pol':pol_codes,'chan':chan_freq*freq_to_hertz,'coef_indx':np.arange(num_coef)}
+    zc_dataset = zc_dataset.assign_coords(coords)
     zc_dataset['ZC'] = xr.DataArray(zc_array, dims=['pol','chan','coef_indx'])
     zc_dataset.attrs['name'] = 'MeerKAT_avg_zcoeffs_LBand_lookup'
     zc_dataset.attrs['conversion_date'] = str(date.today())
