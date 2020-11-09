@@ -1,9 +1,9 @@
 {
     "metadata": {
         ".zattrs": {
-            "conversion_date": "2020-10-26",
+            "conversion_date": "2020-11-09",
             "name": "MeerKAT_avg_zcoeffs_LBand_lookup",
-            "write_zarr_time": 0.011867761611938477
+            "write_zarr_time": 0.013840913772583008
         },
         ".zgroup": {
             "zarr_format": 2
