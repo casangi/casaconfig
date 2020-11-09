@@ -2,11 +2,42 @@
     "metadata": {
         ".zattrs": {
             "conversion_date": "2020-11-09",
-            "name": "MeerKAT_avg_zcoeffs_LBand_lookup",
-            "write_zarr_time": 0.013840913772583008
+            "name": "data/EVLA_avg_SBand_coeffs_highoversamp_wideband.csv",
+            "write_zarr_time": 0.017268896102905273
         },
         ".zgroup": {
             "zarr_format": 2
+        },
+        "ETA/.zarray": {
+            "chunks": [
+                2,
+                13,
+                66
+            ],
+            "compressor": {
+                "blocksize": 0,
+                "clevel": 2,
+                "cname": "zstd",
+                "id": "blosc",
+                "shuffle": 0
+            },
+            "dtype": "<f8",
+            "fill_value": "NaN",
+            "filters": null,
+            "order": "C",
+            "shape": [
+                2,
+                13,
+                66
+            ],
+            "zarr_format": 2
+        },
+        "ETA/.zattrs": {
+            "_ARRAY_DIMENSIONS": [
+                "pol",
+                "chan",
+                "coef_indx"
+            ]
         },
         "ZC/.zarray": {
             "chunks": [

@@ -1,5 +1,5 @@
 {
     "conversion_date": "2020-11-09",
-    "name": "MeerKAT_avg_zcoeffs_LBand_lookup",
-    "write_zarr_time": 0.01549220085144043
+    "name": "data/EVLA_avg_zcoeffs_SBand_lookup.csv",
+    "write_zarr_time": 0.017833948135375977
 }
