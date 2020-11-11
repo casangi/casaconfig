@@ -1,16 +1,16 @@
 {
     "metadata": {
         ".zattrs": {
-            "conversion_date": "2020-11-09",
+            "conversion_date": "2020-11-11",
             "name": "data/EVLA_avg_zcoeffs_SBand_lookup.csv",
-            "write_zarr_time": 0.017833948135375977
+            "write_zarr_time": 0.022060632705688477
         },
         ".zgroup": {
             "zarr_format": 2
         },
         "ETA/.zarray": {
             "chunks": [
-                4,
+                2,
                 16,
                 66
             ],
@@ -26,7 +26,7 @@
             "filters": null,
             "order": "C",
             "shape": [
-                4,
+                2,
                 16,
                 66
             ],
@@ -41,7 +41,7 @@
         },
         "ZC/.zarray": {
             "chunks": [
-                4,
+                2,
                 16,
                 66
             ],
@@ -57,7 +57,7 @@
             "filters": null,
             "order": "C",
             "shape": [
-                4,
+                2,
                 16,
                 66
             ],
@@ -122,7 +122,7 @@
         },
         "pol/.zarray": {
             "chunks": [
-                4
+                2
             ],
             "compressor": {
                 "blocksize": 0,
@@ -136,7 +136,7 @@
             "filters": null,
             "order": "C",
             "shape": [
-                4
+                2
             ],
             "zarr_format": 2
         },

@@ -45,6 +45,7 @@ def csv_to_zarr(filename,freq_to_hertz):
     
 '''
 if __name__ == '__main__':
+
     #Remove all . in name except for last (before .csv)
     filenames = ['data/EVLA_avg_SBand_coeffs_highoversamp_wideband.csv','data/EVLA_avg_zcoeffs_LBand_lookup.csv','data/EVLA_avg_zcoeffs_SBand_lookup.csv', 'data/MeerKAT_avg_zcoeffs_LBand_lookup.csv']
     freq_to_hertz = 10**6
