@@ -2,15 +2,15 @@
     "metadata": {
         ".zattrs": {
             "conversion_date": "2020-11-12",
-            "name": "data/EVLA_avg_zcoeffs_SBand_lookup.csv",
-            "write_zarr_time": 0.022771120071411133
+            "name": "data/EVLA_avg_zcoeffs_SBand_full_pol_lookup.csv",
+            "write_zarr_time": 0.021898984909057617
         },
         ".zgroup": {
             "zarr_format": 2
         },
         "ETA/.zarray": {
             "chunks": [
-                2,
+                4,
                 16,
                 66
             ],
@@ -26,7 +26,7 @@
             "filters": null,
             "order": "C",
             "shape": [
-                2,
+                4,
                 16,
                 66
             ],
@@ -41,7 +41,7 @@
         },
         "ZC/.zarray": {
             "chunks": [
-                2,
+                4,
                 16,
                 66
             ],
@@ -57,7 +57,7 @@
             "filters": null,
             "order": "C",
             "shape": [
-                2,
+                4,
                 16,
                 66
             ],
@@ -122,7 +122,7 @@
         },
         "pol/.zarray": {
             "chunks": [
-                2
+                4
             ],
             "compressor": {
                 "blocksize": 0,
@@ -136,7 +136,7 @@
             "filters": null,
             "order": "C",
             "shape": [
-                2
+                4
             ],
             "zarr_format": 2
         },

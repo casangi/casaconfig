@@ -1,5 +1,5 @@
 {
-    "conversion_date": "2020-11-11",
+    "conversion_date": "2020-11-12",
     "name": "data/EVLA_avg_zcoeffs_LBand_lookup.csv",
-    "write_zarr_time": 0.014319181442260742
+    "write_zarr_time": 0.015528202056884766
 }

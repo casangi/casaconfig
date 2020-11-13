@@ -1,9 +1,9 @@
 {
     "metadata": {
         ".zattrs": {
-            "conversion_date": "2020-11-11",
+            "conversion_date": "2020-11-12",
             "name": "data/EVLA_avg_SBand_coeffs_highoversamp_wideband.csv",
-            "write_zarr_time": 0.020601987838745117
+            "write_zarr_time": 0.018145084381103516
         },
         ".zgroup": {
             "zarr_format": 2
