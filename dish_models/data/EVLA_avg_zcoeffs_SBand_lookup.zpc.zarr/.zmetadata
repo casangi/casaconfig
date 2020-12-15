@@ -1,9 +1,10 @@
 {
     "metadata": {
         ".zattrs": {
-            "conversion_date": "2020-11-12",
+            "conversion_date": "2020-12-15",
+            "dish_diam": 25,
             "name": "data/EVLA_avg_zcoeffs_SBand_lookup.csv",
-            "write_zarr_time": 0.022771120071411133
+            "write_zarr_time": 0.020753860473632812
         },
         ".zgroup": {
             "zarr_format": 2

@@ -1,6 +1,6 @@
 #Sekhar et al 2020 in Preperation explains model.
 #The column headings are assumed to be stokes,freq,ind,real,imag
-def csv_to_zarr(filename,freq_to_hertz):
+def csv_to_zarr(filename,freq_to_hertz,dish_diam):
     from cngi.dio import write_zarr
     import xarray as xr
     import numpy as np
@@ -38,17 +38,20 @@ def csv_to_zarr(filename,freq_to_hertz):
     zc_dataset['ETA'] = xr.DataArray(eta_array, dims=['pol','chan','coef_indx'])
     zc_dataset.attrs['name'] = filename
     zc_dataset.attrs['conversion_date'] = str(date.today())
+    zc_dataset.attrs['dish_diam'] = dish_diam
     
     write_zarr(zc_dataset,filename.split('.')[0]+'.zpc.zarr')
     
     print(zc_dataset)
     
 
+'''
 if __name__ == '__main__':
 
     #Remove all . in name except for last (before .csv)
     filenames = ['data/EVLA_avg_SBand_coeffs_highoversamp_wideband.csv','data/EVLA_avg_zcoeffs_LBand_lookup.csv','data/EVLA_avg_zcoeffs_SBand_lookup.csv', 'data/MeerKAT_avg_zcoeffs_LBand_lookup.csv','data/EVLA_avg_zcoeffs_SBand_full_pol_lookup.csv']
+    dish_diams = [25,25,25,13.5,25]
     freq_to_hertz = 10**6
-    for filename in filenames:
-        csv_to_zarr(filename,freq_to_hertz)
-
+    for filename,dish_diam in zip(filenames,dish_diams):
+        csv_to_zarr(filename,freq_to_hertz,dish_diam)
+'''
