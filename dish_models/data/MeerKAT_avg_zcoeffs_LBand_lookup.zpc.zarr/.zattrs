@@ -1,6 +1,5 @@
 {
-    "conversion_date": "2020-12-15",
-    "dish_diam": 13.5,
-    "name": "data/MeerKAT_avg_zcoeffs_LBand_lookup.csv",
-    "write_zarr_time": 0.020711183547973633
+    "conversion_date": "2021-06-10",
+    "dish_diam": 25,
+    "name": "data/MeerKAT_avg_zcoeffs_LBand_lookup.csv"
 }

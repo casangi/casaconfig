@@ -1,7 +1,7 @@
 #Sekhar et al 2020 in Preperation explains model.
 #The column headings are assumed to be stokes,freq,ind,real,imag
 def csv_to_zarr(filename,freq_to_hertz,dish_diam):
-    from cngi.dio import write_zarr
+    #from cngi.dio import write_zarr
     import xarray as xr
     import numpy as np
     import dask.array as da
@@ -29,7 +29,11 @@ def csv_to_zarr(filename,freq_to_hertz,dish_diam):
         i_chan = np.where(chan_freq == csv_array[i_csv,1])[0][0]
         i_coef = int(csv_array[i_csv,2])
         zc_array[i_pol,i_chan,i_coef] =  csv_array[i_csv,3] + 1j*csv_array[i_csv,4]
-        eta_array[i_pol,i_chan,i_coef] = csv_array[i_csv,5]
+        print(len(csv_array[i_csv,:]))
+        if len(csv_array[i_csv,:]) > 5:
+            eta_array[i_pol,i_chan,i_coef] = csv_array[i_csv,5]
+        else:
+            eta_array[i_pol,i_chan,i_coef] = 1
         
     zc_dataset = xr.Dataset()
     coords = {'pol':pol_codes,'chan':chan_freq*freq_to_hertz,'coef_indx':np.arange(num_coef)}
@@ -40,18 +44,22 @@ def csv_to_zarr(filename,freq_to_hertz,dish_diam):
     zc_dataset.attrs['conversion_date'] = str(date.today())
     zc_dataset.attrs['dish_diam'] = dish_diam
     
-    write_zarr(zc_dataset,filename.split('.')[0]+'.zpc.zarr')
+    #write_zarr(zc_dataset,filename.split('.')[0]+'.zpc.zarr')
+    xr.Dataset.to_zarr(zc_dataset,filename.split('.')[0]+'.zpc.zarr',mode='w')
+    
     
     print(zc_dataset)
     
 
-'''
+
 if __name__ == '__main__':
 
     #Remove all . in name except for last (before .csv)
-    filenames = ['data/EVLA_avg_SBand_coeffs_highoversamp_wideband.csv','data/EVLA_avg_zcoeffs_LBand_lookup.csv','data/EVLA_avg_zcoeffs_SBand_lookup.csv', 'data/MeerKAT_avg_zcoeffs_LBand_lookup.csv','data/EVLA_avg_zcoeffs_SBand_full_pol_lookup.csv']
+    #'data/EVLA_avg_SBand_coeffs_highoversamp_wideband.csv', EVLA_avg_zcoeffs_SBand_full_pol_lookup.csv
+    filenames = ['data/EVLA_avg_zcoeffs_LBand_lookup.csv','data/EVLA_avg_zcoeffs_SBand_lookup.csv', 'data/MeerKAT_avg_zcoeffs_LBand_lookup.csv','data/EVLA_avg_zcoeffs_SBand_lookup_holoeta.csv','data/EVLA_avg_zcoeffs_SBand_lookup_noeta.csv','data/EVLA_avg_zcoeffs_SBand_lookup_stdeta.csv']
     dish_diams = [25,25,25,13.5,25]
     freq_to_hertz = 10**6
     for filename,dish_diam in zip(filenames,dish_diams):
+        print(filename)
         csv_to_zarr(filename,freq_to_hertz,dish_diam)
-'''
+
