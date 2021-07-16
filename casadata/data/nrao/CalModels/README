@@ -1,0 +1,34 @@
+These are all un-reconvolved images of AIPS CC lists, properly scaled
+to the Perley-Taylor 1999 flux density for the frequencies at which 
+they were observed.
+
+NB: It is not necessary for these images to have the correct scale.
+CASA will rescale as needed to the correct scale as a function
+of frequency according to the flux density standard specified
+by the user in setjy (09Feb18 gmoellen)
+
+NB: The recipe for creating these images in AIPS (09Feb18) is
+as follows:
+
+1. Use CALRD (or other means) to import the desired image file
+   (Usually this is an AIPS image restored to an appropriate
+    resolution and containing a CC table with the clean component
+    model; for f.d.-scaling purposes, AIPS uses only the CC model.)
+
+2. Use COMB with the image from above specifed in both inn and in2n,
+   OPCODE='SUM', APARM=1,-1,0 (to effect subtraction), and BLC/TRC set
+   to select an appropriate section of the image such that the output
+   will have 2^n pixels on a side (as required by RSTOR below).  Don't
+   forget to give the output a useful name.
+
+3. Run RSTOR with the output of COMB in inn, the original image in in2n,
+   and a sensible output name.  Use BMAJ=1e-8; BMIN=1e-8 to yield
+   an image which is effectively unrestored. 
+
+4. Export the result of RSTOR with FITTP, and import into CASA with
+   importfits.  The CASA image that results can be specified in
+   setjy.
+
+UPDATE 2009/10/08: The bandwidth (cdelt3) has been changed to be 2 GHz
+in these images so WIDAR data will not run into trouble using older
+versions of setjy which blank MODEL_DATA outside this range.
