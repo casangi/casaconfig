@@ -6,7 +6,7 @@ with open('README.md', "r") as fid:   #encoding='utf-8'
 
 setup(
     name='casadata',
-    version='0.0.1rc3',
+    version='0.0.1rc9',
     description='CASA Operational Data Package',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -16,8 +16,7 @@ setup(
     license='Apache-2.0',
     packages=find_packages(),
     include_package_data=True,
-    #data_files = [
-    #    ('casadata/data', glob('casadata/data/**/*', recursive=True)), # recursive
-    #],
-    install_requires=['cngi-prototype==0.0.90']
+    install_requires=['xarray>=0.16.2',
+                      'numpy>=1.19.5',
+                      'python-casacore>=3.4.0']
 )
