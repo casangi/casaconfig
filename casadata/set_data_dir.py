@@ -37,9 +37,8 @@ def set_data_dir(path=None):
     if path is None:
         path = pkg_resources.resource_filename('casadata', 'data/')
     path = os.path.abspath(os.path.expanduser(path))
-    path = os.path.join(path, 'geodetic').replace('/geodetic/geodetic', 'geodetic')
 
-    rctext = 'measures.observatory.directory: %s\n' % path
+    rctext = 'measures.directory: %s\n' % path
 
     casarc = os.path.expanduser('~/.casarc')
     
@@ -49,7 +48,7 @@ def set_data_dir(path=None):
         with open(casarc, 'r') as fid:
             print('found existing .casarc...')
             oldtxt = fid.read()
-        rctext = re.sub('measures.observatory.directory: .+?\n', '%s'%rctext, oldtxt, flags=re.DOTALL)
+        rctext = re.sub('measures.directory: .+?\n', '%s'%rctext, oldtxt, flags=re.DOTALL)
     
     # write out new .casarc file
     with open(casarc, 'w') as fid:

@@ -111,6 +111,6 @@ def table_open(path=None):
     if len(xds_list) > 1:
         mxds = xarray.Dataset(attrs=dict(xds_list))
     elif len(xds_list) == 1:
-        mxds = xds_list[0]
+        mxds = xds_list[0][1]
         
     return mxds

@@ -59,7 +59,7 @@ def measures_update(path=None, version=None):
     
     os.system("tar -zxf %s -C %s" % (os.path.join(path,'measures.ztar'), path))
     os.system("rm %s" % os.path.join(path, 'measures.ztar'))
-    os.system("rm -fr %s/*.old" % os.path.join(path, '/geodetic'))
+    os.system("rm -fr %s/*.old" % os.path.join(path, 'geodetic'))
     
     
     return
