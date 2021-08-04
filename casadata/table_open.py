@@ -62,7 +62,22 @@ def read_simple_table(infile):
     xds = xarray.Dataset(mvars, coords=mcoords)
     xds = xds.rename(dict([(dv, dims[di]) for di, dv in enumerate(xds.dims)]))
     bad_cols = list(np.setdiff1d([dv.lower() for dv in tb_tool.colnames()], [dv.lower() for dv in list(xds.data_vars)+list(xds.coords)]))
-    if len(bad_cols) > 0: xds = xds.assign_attrs({'bad_cols':bad_cols})
+
+    attrs = {}
+    if len(bad_cols) > 0: attrs['bad_cols'] = bad_cols
+
+    # add table keywords to attributes
+    kwd = tb_tool.getkeywords()
+    for kk in kwd:
+        attrs[kk.lower()] = kwd[kk]
+
+    # add column keywords to attributes
+    for col in tb_tool.colnames():
+        kwd = tb_tool.getcolkeywords(col)
+        for kk in kwd:
+            attrs['%s_%s'%(col.lower(),kk.lower())] = kwd[kk]
+
+    xds = xds.assign_attrs(attrs)
     tb_tool.close()
 
     return xds
