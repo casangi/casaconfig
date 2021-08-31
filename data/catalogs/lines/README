@@ -1,0 +1,15 @@
+From Tony Remijan (CAS-900)
+
+The RRF line list contains all the transitions of all the known astronomical molecules where we have recommended a freq for.
+The column labels for the RRF is: 
+Chemical Formula; Chemical Name; Rest Freq in MHz; Transition QNs; Line Strength (Sijmu^2); Lower State Energy (K);
+Catalog Name where the data came from
+
+The Lovas_NIST list is an update to the Lovas recommended freq list from NIST. These data are all the known detected
+transitions... These data will only be available in Splatalogue from now on. In this case, the column labels for the
+Lovas_NIST file is:
+Chemical Formula; Chemical Name; Rest Freq in MHz; Transition QNs; detected astronomical intensity.
+
+Frank Lovas did not keep track of consistent intensity units so there are some in mK, K, Jy, Jy/beam etc...however,
+if we are just "frequency flagging", that is not a problem.
+

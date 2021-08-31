@@ -1,0 +1,4 @@
+Type = IERS
+SubType = Comet
+
+Derived by JPLephem_reader.py from a JPL-Horizons ephemeris (http://ssd.jpl.nasa.gov/horizons.cgi#top)

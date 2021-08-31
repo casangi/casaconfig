@@ -6,7 +6,7 @@ with open('README.md', "r") as fid:   #encoding='utf-8'
 
 setup(
     name='casadata',
-    version='0.0.1rc11',
+    version='0.0.1rc14',
     description='CASA Operational Data Package',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -18,5 +18,6 @@ setup(
     include_package_data=True,
     install_requires=['xarray>=0.16.2',
                       'numpy>=1.19.5',
-                      'python-casacore>=3.4.0']
+                      'python-casacore>=3.4.0',
+                      'wheel>=0.37.0']
 )
