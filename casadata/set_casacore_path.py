@@ -16,7 +16,7 @@ this module will be included in the api
 """
 
 
-def set_data_dir(path=None):
+def set_casacore_path(path=None):
     """
     Set the path in .casarc to the desired data directory
 

@@ -24,7 +24,7 @@ def measures_update(path=None, version=None):
     Parameters
     ----------
     path : str
-        Folder path to place updated measures data. Default None places it in current working directory
+        Folder path to place updated measures data. Default None places it in package installation directory
     version : str
         Version of measures data to retrieve (in the form of yyyymmdd-160001, see measures_available()). Default None retrieves the latest
         
@@ -35,8 +35,9 @@ def measures_update(path=None, version=None):
     """
     from ftplib import FTP
     import os
+    import pkg_resources
     
-    if path is None: path = './'
+    if path is None: path = pkg_resources.resource_filename('casadata', '__data__/')
     path = os.path.expanduser(path)
     if not os.path.exists(path): os.mkdir(path)
     

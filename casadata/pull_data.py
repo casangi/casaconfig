@@ -16,22 +16,30 @@ this module will be included in the api
 """
 
 
-def get_data_dir():
+def pull_data(path=None):
     """
-    Return the path to the included data folder inside this package
+    Pull down the package data contents from github to the specified directory
 
     Parameters
     ----------
-    None
+    path: str
+        Folder path to place casadata contents. Default None places it in package installation directory
 
     Returns
     -------
-    data_dir: string
-        absolute path to included data directory
+    None
 
     """
     import pkg_resources
+    import git
+    import os
 
-    datapath = pkg_resources.resource_filename('casadata', '__data__/')
+    if path is None: path = pkg_resources.resource_filename('casadata', '__data__/')
+    path = os.path.expanduser(path)
+    if not os.path.exists(path): os.mkdir(path)
 
-    return datapath
+    print('Downloading casadata contents...')
+    repo = git.Repo.clone_from('https://github.com/casangi/casadata.git', path+'/tmp', branch='master')
+    os.system('cp -r %s/tmp/data/* %s' % (path, path))
+    os.system('rm -fr %s/tmp' % path)
+
