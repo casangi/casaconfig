@@ -6,7 +6,7 @@ with open('README.md', "r") as fid:   #encoding='utf-8'
 
 setup(
     name='casadata',
-    version='0.0.1rc16',
+    version='0.0.1rc18',
     description='CASA Operational Data Package',
     long_description=long_description,
     long_description_content_type="text/markdown",

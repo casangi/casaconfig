@@ -34,8 +34,7 @@ def set_casacore_path(path=None):
     import os
     import re
     
-    if path is None:
-        path = pkg_resources.resource_filename('casadata', 'data/')
+    if path is None: path = pkg_resources.resource_filename('casadata', 'data/')
     path = os.path.abspath(os.path.expanduser(path))
 
     rctext = 'measures.directory: %s\n' % path
@@ -48,8 +47,10 @@ def set_casacore_path(path=None):
         with open(casarc, 'r') as fid:
             print('found existing .casarc...')
             oldtxt = fid.read()
-        rctext = re.sub('measures.directory: .+?\n', '%s'%rctext, oldtxt, flags=re.DOTALL)
-    
+        if 'measures.directory' in oldtxt:
+            rctext = re.sub('measures.directory: .+?\n', '%s'%rctext, oldtxt, flags=re.DOTALL)
+        else:
+            rctext = oldtxt.strip() + '\n' + rctext
     # write out new .casarc file
     with open(casarc, 'w') as fid:
         print('writing %s...' % casarc)
