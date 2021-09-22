@@ -16,7 +16,7 @@ this module will be included in the api
 """
 
 
-def pull_data(path=None):
+def pull_data(path=None, branch=None):
     """
     Pull down the package data contents from github to the specified directory
 
@@ -24,6 +24,9 @@ def pull_data(path=None):
     ----------
     path: str
         Folder path to place casadata contents. Default None places it in package installation directory
+    branch : str
+        casadata repo branch to retrieve data from. Use 'master' for latest casadata trunk. Default None attempts
+        to get data from repo branch matching this installation version.
 
     Returns
     -------
@@ -31,15 +34,21 @@ def pull_data(path=None):
 
     """
     import pkg_resources
+    import importlib_metadata
     import git
     import os
 
     if path is None: path = pkg_resources.resource_filename('casadata', '__data__/')
     path = os.path.expanduser(path)
     if not os.path.exists(path): os.mkdir(path)
+    if branch is None:
+        try:
+            branch = 'v'+importlib_metadata.version('casadata')
+        except:
+            branch = 'v0.0.0'
 
     print('Downloading casadata contents...')
-    repo = git.Repo.clone_from('https://github.com/casangi/casadata.git', path+'/tmp', branch='master')
+    repo = git.Repo.clone_from('https://github.com/casangi/casadata.git', path+'/tmp', branch=branch)
     os.system('cp -r %s/tmp/data/* %s' % (path, path))
     os.system('rm -fr %s/tmp' % path)
 
