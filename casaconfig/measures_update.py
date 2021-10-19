@@ -37,7 +37,7 @@ def measures_update(path=None, version=None):
     import os
     import pkg_resources
     
-    if path is None: path = pkg_resources.resource_filename('casadata', '__data__/')
+    if path is None: path = pkg_resources.resource_filename('casaconfig', '__data__/')
     path = os.path.expanduser(path)
     if not os.path.exists(path): os.mkdir(path)
     

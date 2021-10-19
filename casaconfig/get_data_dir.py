@@ -32,6 +32,6 @@ def get_data_dir():
     """
     import pkg_resources
 
-    datapath = pkg_resources.resource_filename('casadata', '__data__/')
+    datapath = pkg_resources.resource_filename('casaconfig', '__data__/')
 
     return datapath

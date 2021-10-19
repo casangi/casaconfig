@@ -5,9 +5,9 @@ with open('README.md', "r") as fid:   #encoding='utf-8'
     long_description = fid.read()
 
 setup(
-    name='casadata',
-    version='0.0.1rc18',
-    description='CASA Operational Data Package',
+    name='casaconfig',
+    version='0.0.4',
+    description='CASA Operational Configuration Package',
     long_description=long_description,
     long_description_content_type="text/markdown",
     author='National Radio Astronomy Observatory',
@@ -19,5 +19,6 @@ setup(
     install_requires=['xarray>=0.16.2',
                       'numpy>=1.19.5',
                       'python-casacore>=3.4.0',
-                      'GitPython>=3.1.18']
+                      'GitPython>=3.1.18',
+                      'importlib_metadata>=4.8.1']
 )

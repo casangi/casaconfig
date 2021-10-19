@@ -38,17 +38,17 @@ def pull_data(path=None, branch=None):
     import git
     import os
 
-    if path is None: path = pkg_resources.resource_filename('casadata', '__data__/')
+    if path is None: path = pkg_resources.resource_filename('casaconfig', '__data__/')
     path = os.path.expanduser(path)
     if not os.path.exists(path): os.mkdir(path)
     if branch is None:
         try:
-            branch = 'v'+importlib_metadata.version('casadata')
+            branch = 'v'+importlib_metadata.version('casaconfig')
         except:
             branch = 'v0.0.0'
 
-    print('Downloading casadata contents...')
-    repo = git.Repo.clone_from('https://github.com/casangi/casadata.git', path+'/tmp', branch=branch)
+    print('Downloading data contents...')
+    repo = git.Repo.clone_from('https://github.com/casangi/casaconfig.git', path+'/tmp', branch=branch)
     os.system('cp -r %s/tmp/data/* %s' % (path, path))
     os.system('rm -fr %s/tmp' % path)
 

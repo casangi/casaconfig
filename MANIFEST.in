@@ -1,1 +1,1 @@
-recursive-include casadata/__data__ *
+recursive-include casaconfig/__data__ *
