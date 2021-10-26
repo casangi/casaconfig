@@ -25,7 +25,7 @@ import numpy as np
 ##################################################################
 def read_simple_table(infile):
     from casacore import tables
-    
+
     tb_tool = tables.table(infile, readonly=True, lockoptions={'option': 'usernoread'}, ack=False)
     if tb_tool.nrows() == 0:
         tb_tool.close()
@@ -101,7 +101,13 @@ def table_open(path=None):
         xarray dataset or dataset of datasets
 
     """
-    
+    import importlib.util
+    import xarray
+
+    if importlib.util.find_spec('casacore') is None:
+        print("### python-casacore not found ### - try installing with '$: pip install python-casacore'")
+        return xarray.Dataset()
+
     if path is None: path = './'
     path = os.path.expanduser(path)
     xds_list = []
