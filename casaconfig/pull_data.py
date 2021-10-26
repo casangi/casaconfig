@@ -16,7 +16,7 @@ this module will be included in the api
 """
 
 
-def pull_data(path=None, branch=None):
+def pull_data(path=None, branch=None, logger=None):
     """
     Pull down the package data contents from github to the specified directory
 
@@ -27,6 +27,8 @@ def pull_data(path=None, branch=None):
     branch : str
         casadata repo branch to retrieve data from. Use 'master' for latest casadata trunk. Default None attempts
         to get data from repo branch matching this installation version.
+    logger : casatools.logsink
+        Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
 
     Returns
     -------
@@ -47,8 +49,21 @@ def pull_data(path=None, branch=None):
         except:
             branch = 'v0.0.0'
 
-    print('Downloading data contents...')
-    repo = git.Repo.clone_from('https://github.com/casangi/casaconfig.git', path+'/tmp', branch=branch)
+    if logger is None:
+        print('Downloading data contents...')
+    else:
+        logger.post('casaconfig downloading data contents...', 'INFO')
+
+    try:
+        repo = git.Repo.clone_from('https://github.com/casangi/casaconfig.git', path+'/tmp', branch=branch)
+    except:
+        if logger is None:
+            print("WARNING: can't find data branch %s, defaulting to master" % branch)
+        else:
+            logger.post('casaconfig cant find data branch %s, defaulting to master' % branch, 'WARN')
+
+        repo = git.Repo.clone_from('https://github.com/casangi/casaconfig.git', path + '/tmp', branch='master')
+
     os.system('cp -r %s/tmp/data/* %s' % (path, path))
     os.system('rm -fr %s/tmp' % path)
 

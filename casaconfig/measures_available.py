@@ -37,6 +37,6 @@ def measures_available():
     rc = ftp.cwd('outgoing/Measures')
     files = ftp.nlst()
     ftp.quit()
-    files = [ff.replace('WSRT_Measures','').replace('.ztar','').replace('_','') for ff in files]
+    #files = [ff.replace('WSRT_Measures','').replace('.ztar','').replace('_','') for ff in files]
     files = [ff for ff in files if (len(ff) > 0) and (not ff.endswith('.dat'))]
     return files

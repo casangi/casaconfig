@@ -15,7 +15,7 @@
 this module will be included in the api
 """
 
-def measures_update(path=None, version=None):
+def measures_update(path=None, version=None, force=False, logger=None):
     """
     Retrieve IERS data used for measures calculations from ASTRON FTP server
     
@@ -27,6 +27,10 @@ def measures_update(path=None, version=None):
         Folder path to place updated measures data. Default None places it in package installation directory
     version : str
         Version of measures data to retrieve (in the form of yyyymmdd-160001, see measures_available()). Default None retrieves the latest
+    force : bool
+        If True, always re-download the measures data even if matching set found in path. Default False will not download duplicate measures
+    logger : casatools.logsink
+        Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
         
     Returns
     -------
@@ -35,32 +39,64 @@ def measures_update(path=None, version=None):
     """
     from ftplib import FTP
     import os
+    from datetime import datetime
     import pkg_resources
     
     if path is None: path = pkg_resources.resource_filename('casaconfig', '__data__/')
     path = os.path.expanduser(path)
     if not os.path.exists(path): os.mkdir(path)
-    
-    # target filename to download
-    version = '' if version is None else '_' + version
-    target = 'WSRT_Measures' + version + '.ztar'
+    current = None
+    updated = None
 
-    print('connecting to ftp.astron.nl ...')
+    # if measures are already preset, get their version
+    if os.path.exists(os.path.join(path, 'geodetic/readme.txt')):
+        try:
+            with open(os.path.join(path,'geodetic/readme.txt'), 'r') as fid:
+                readme = fid.readlines()
+            current = readme[1].split(':')[-1].strip()
+            updated = readme[2].split(':')[-1].strip()
+        except:
+            pass
+
+    # don't re-download the same data
+    if not force:
+        if ((version is not None) and (version == current)) or ((version is None) and (updated == datetime.today().strftime('%Y-%m-%d'))):
+            if logger is None:
+                print('current measures detected, not updating')
+            else:
+                logger.post('casaconfig current measures detected, using version %s' % current, 'INFO')
+            return
+
+    if logger is None:
+        print('connecting to ftp.astron.nl ...')
+    else:
+        logger.post('casconfig connecting to ftp.astron.nl ...', 'INFO')
+
     ftp = FTP('ftp.astron.nl')
     rc = ftp.login()
     rc = ftp.cwd('outgoing/Measures')
-    files = ftp.nlst()
+    files = sorted([ff for ff in ftp.nlst() if (len(ff) > 0) and (not ff.endswith('.dat'))])
+
+    # target filename to download
+    target = files[-1] if version is None else version
     if target not in files:
-        print('##### ERROR: cant find specified version #####')
+        if logger is None:
+            print('##### ERROR: cant find specified version %s #####' % target)
+        else:
+            logger.post('casaconfig cant find specified version %s' % target, 'ERROR')
         return
     
     with open(os.path.join(path,'measures.ztar'), 'wb') as fid:
-        print('downloading data from ASTRON server ...')
+        if logger is None:
+            print('downloading data from ASTRON server ...')
+        else:
+            logger.post('casaconfig downloading %s from ASTRON server ...' % target, 'INFO')
         ftp.retrbinary('RETR ' + target, fid.write)
     
     os.system("tar -zxf %s -C %s" % (os.path.join(path,'measures.ztar'), path))
     os.system("rm %s" % os.path.join(path, 'measures.ztar'))
     os.system("rm -fr %s/*.old" % os.path.join(path, 'geodetic'))
-    
-    
+    with open(os.path.join(path,'geodetic/readme.txt'), 'w') as fid:
+       fid.write("# measures data populated by casaconfig\nversion : %s\ndata : %s" % (target, datetime.today().strftime('%Y-%m-%d')))
+
     return
