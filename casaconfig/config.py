@@ -2,7 +2,7 @@ import os
 import time
 import sys
 import pkg_resources
-from casaconfig import measures_update
+from casaconfig import measures_update, pull_data
 
 
 ########################################################################
@@ -10,21 +10,43 @@ from casaconfig import measures_update
 ########################################################################
 datapath = [pkg_resources.resource_filename('casaconfig', '__data__/')]
 rundata = os.path.expanduser("~/.casa/measures")
+
+########################################################################
+## Define the logfile naming scheme
+########################################################################
 logfile='casalog_%s.log' % time.strftime("%Y-%m-%d", time.localtime())
 
-# execute only when casatools is initialized
+########################################################################
+## Define what happens when CASA starts
+########################################################################
+## execute only when casatools is initialized
 if __name__.startswith('casatool'):
-
-    # log some information
     from casatools import logsink
     logger = logsink(logfile)
+
+    ########################################################################
+    ## Default startup log information
+    ########################################################################
+    logger.post('########################################################################', 'INFO')
+    logger.post('Using default config.py from casaconfig', 'INFO')
     logger.post('python version %s' % sys.version, 'INFO')
+    logger.post('########################################################################', 'INFO')
 
-    # make parent folder (ie .casa) if necessary
-    if ('/' in rundata) and (rundata.rindex('/') > 0) and (not os.path.exists(rundata[:rundata.rindex('/')])):
-        os.system('mkdir %s' % rundata[:rundata.rindex('/')])
+    ########################################################################
+    ## Create a ~/.casa folder if not already present
+    ########################################################################
+    if not os.path.exists(os.path.expanduser("~/.casa")):
+        os.system('mkdir %s' % os.path.expanduser("~/.casa"))
 
-    # update the IERS measures data if necessary
+    ########################################################################
+    ## populate the operational __data__ folder if empty
+    ########################################################################
+    if len(os.listdir(datapath[0])) == 1:
+        pull_data(datapath[0], logger=logger)
+
+    ########################################################################
+    ## update the IERS measures data if not already done today
+    ########################################################################
     measures_update(rundata, logger=logger)
 
 

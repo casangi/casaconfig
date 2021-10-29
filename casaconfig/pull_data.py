@@ -49,18 +49,14 @@ def pull_data(path=None, branch=None, logger=None):
         except:
             branch = 'v0.0.0'
 
-    if logger is None:
-        print('Downloading data contents...')
-    else:
-        logger.post('casaconfig downloading data contents...', 'INFO')
+    print('Downloading data contents...')
+    if logger is not None: logger.post('casaconfig downloading data contents...', 'INFO')
 
     try:
         repo = git.Repo.clone_from('https://github.com/casangi/casaconfig.git', path+'/tmp', branch=branch)
     except:
-        if logger is None:
-            print("WARNING: can't find data branch %s, defaulting to master" % branch)
-        else:
-            logger.post('casaconfig cant find data branch %s, defaulting to master' % branch, 'WARN')
+        print("WARNING: can't find data branch %s, defaulting to master" % branch)
+        if logger is not None: logger.post('casaconfig cant find data branch %s, defaulting to master' % branch, 'WARN')
 
         repo = git.Repo.clone_from('https://github.com/casangi/casaconfig.git', path + '/tmp', branch='master')
 

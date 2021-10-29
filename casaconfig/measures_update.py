@@ -61,16 +61,12 @@ def measures_update(path=None, version=None, force=False, logger=None):
     # don't re-download the same data
     if not force:
         if ((version is not None) and (version == current)) or ((version is None) and (updated == datetime.today().strftime('%Y-%m-%d'))):
-            if logger is None:
-                print('current measures detected, not updating')
-            else:
-                logger.post('casaconfig current measures detected, using version %s' % current, 'INFO')
+            print('current measures detected, using version %s' % current)
+            if logger is not None: logger.post('casaconfig current measures detected, using version %s' % current, 'INFO')
             return
 
-    if logger is None:
-        print('connecting to ftp.astron.nl ...')
-    else:
-        logger.post('casconfig connecting to ftp.astron.nl ...', 'INFO')
+    print('connecting to ftp.astron.nl ...')
+    if logger is not None: logger.post('casconfig connecting to ftp.astron.nl ...', 'INFO')
 
     ftp = FTP('ftp.astron.nl')
     rc = ftp.login()
@@ -80,17 +76,13 @@ def measures_update(path=None, version=None, force=False, logger=None):
     # target filename to download
     target = files[-1] if version is None else version
     if target not in files:
-        if logger is None:
-            print('##### ERROR: cant find specified version %s #####' % target)
-        else:
-            logger.post('casaconfig cant find specified version %s' % target, 'ERROR')
+        print('##### ERROR: cant find specified version %s #####' % target)
+        if logger is not None: logger.post('casaconfig cant find specified version %s' % target, 'ERROR')
         return
     
     with open(os.path.join(path,'measures.ztar'), 'wb') as fid:
-        if logger is None:
-            print('downloading data from ASTRON server ...')
-        else:
-            logger.post('casaconfig downloading %s from ASTRON server ...' % target, 'INFO')
+        print('downloading data from ASTRON server ...')
+        if logger is not None: logger.post('casaconfig downloading %s from ASTRON server ...' % target, 'INFO')
         ftp.retrbinary('RETR ' + target, fid.write)
     
     os.system("tar -zxf %s -C %s" % (os.path.join(path,'measures.ztar'), path))
