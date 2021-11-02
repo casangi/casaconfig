@@ -76,8 +76,8 @@ def measures_update(path=None, version=None, force=False, logger=None):
     # target filename to download
     target = files[-1] if version is None else version
     if target not in files:
-        print('##### ERROR: cant find specified version %s #####' % target)
         if logger is not None: logger.post('casaconfig cant find specified version %s' % target, 'ERROR')
+        else: print('##### ERROR: cant find specified version %s #####' % target)
         return
     
     with open(os.path.join(path,'measures.ztar'), 'wb') as fid:

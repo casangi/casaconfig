@@ -55,8 +55,8 @@ def pull_data(path=None, branch=None, logger=None):
     try:
         repo = git.Repo.clone_from('https://github.com/casangi/casaconfig.git', path+'/tmp', branch=branch)
     except:
-        print("WARNING: can't find data branch %s, defaulting to master" % branch)
         if logger is not None: logger.post('casaconfig cant find data branch %s, defaulting to master' % branch, 'WARN')
+        else: print("WARNING: can't find data branch %s, defaulting to master" % branch)
 
         repo = git.Repo.clone_from('https://github.com/casangi/casaconfig.git', path + '/tmp', branch='master')
 
