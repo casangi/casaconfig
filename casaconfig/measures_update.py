@@ -89,6 +89,6 @@ def measures_update(path=None, version=None, force=False, logger=None):
     os.system("rm %s" % os.path.join(path, 'measures.ztar'))
     os.system("rm -fr %s/*.old" % os.path.join(path, 'geodetic'))
     with open(os.path.join(path,'geodetic/readme.txt'), 'w') as fid:
-       fid.write("# measures data populated by casaconfig\nversion : %s\ndata : %s" % (target, datetime.today().strftime('%Y-%m-%d')))
+       fid.write("# measures data populated by casaconfig\nversion : %s\ndate : %s" % (target, datetime.today().strftime('%Y-%m-%d')))
 
     return
