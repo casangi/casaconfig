@@ -15,7 +15,6 @@
 this module will be included in the api
 """
 import os
-import xarray
 import numpy as np
 
 
@@ -25,6 +24,7 @@ import numpy as np
 ##################################################################
 def read_simple_table(infile):
     from casacore import tables
+    import xarray
 
     tb_tool = tables.table(infile, readonly=True, lockoptions={'option': 'usernoread'}, ack=False)
     if tb_tool.nrows() == 0:
