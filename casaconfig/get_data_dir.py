@@ -21,13 +21,10 @@ def get_data_dir():
     Return the path to the included data folder inside this package
 
     Parameters
-    ----------
-    None
+       None
 
     Returns
-    -------
-    data_dir: string
-        absolute path to included data directory
+       string - absolute path to included data directory
 
     """
     import pkg_resources

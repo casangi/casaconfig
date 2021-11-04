@@ -21,13 +21,10 @@ def measures_available():
     List available measures versions on ASTRON FTP server
 
     Parameters
-    ----------
-    None
+       None
     
     Returns
-    -------
-    versions: list
-        version names returned as list of strings
+       list - version names returned as list of strings
 
     """
     from ftplib import FTP

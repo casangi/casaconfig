@@ -21,13 +21,10 @@ def set_casacore_path(path=None):
     Set the path in .casarc to the desired data directory
 
     Parameters
-    ----------
-    path: string
-        path to the desired data directory. Default None uses the included data directory from this package
+       - path (string=None) - path to the desired data directory. Default None uses the included data directory from this package
 
     Returns
-    -------
-    None
+       None
 
     """
     import pkg_resources

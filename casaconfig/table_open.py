@@ -91,14 +91,10 @@ def table_open(path=None):
     Open a variety of casadata contents
 
     Parameters
-    ----------
-    path : str
-        Folder path to the data. Default None looks in current working directory
+       - path (str=None) - Folder path to the data. Default None looks in current working directory
 
     Returns
-    -------
-    xarray.core.dataset.Dataset
-        xarray dataset or dataset of datasets
+        xarray.core.dataset.Dataset - xarray dataset or dataset of datasets
 
     """
     import importlib.util

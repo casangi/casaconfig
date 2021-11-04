@@ -21,18 +21,13 @@ def pull_data(path=None, branch=None, logger=None):
     Pull down the package data contents from github to the specified directory
 
     Parameters
-    ----------
-    path: str
-        Folder path to place casadata contents. Default None places it in package installation directory
-    branch : str
-        casadata repo branch to retrieve data from. Use 'master' for latest casadata trunk. Default None attempts
+       - path (str=None) - Folder path to place casadata contents. Default None places it in package installation directory
+       - branch (str=None) - casadata repo branch to retrieve data from. Use 'master' for latest casadata trunk. Default None attempts
         to get data from repo branch matching this installation version.
-    logger : casatools.logsink
-        Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
+       - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
 
     Returns
-    -------
-    None
+       None
 
     """
     import pkg_resources
