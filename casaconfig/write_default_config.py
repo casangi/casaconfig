@@ -23,7 +23,7 @@ def write_default_config(name, **kwargs):
     Parameters
        - name (str) - output filename to write configuration to
        - **kwargs - modify the configuration option specified by keyword to value specified in variable (i.e. telemetry_enabled = True).
-        Keywords that don't exist in the default list are ignored.
+       Keywords that don't exist in the default list are ignored.
 
     Returns
        None
