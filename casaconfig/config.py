@@ -6,6 +6,9 @@ datapath = [pkg_resources.resource_filename('casaconfig', '__data__/')]
 # location of required runtime measures data, takes precedence over location(s) in datapath list
 rundata = os.path.expanduser("~/.casa/measures")
 
+# automatically populate the datapath[0] location if not already done
+populate_data = True
+
 # automatically update measures data if not current (rundata must be user-writable)
 measures_update = True
 
