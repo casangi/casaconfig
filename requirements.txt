@@ -1,5 +1,4 @@
 xarray>=0.16.2
 numpy>=1.18.4
-python-casacore>=3.4.0
 GitPython==3.1.18
 importlib_metadata>=4.8.1

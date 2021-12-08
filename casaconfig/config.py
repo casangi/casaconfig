@@ -1,12 +1,13 @@
-import os, time, sys, pkg_resources
-from casaconfig import measures_update, pull_data
-
+import os, time, pkg_resources
 
 # list of paths where CASA should search for data subdirectories
 datapath = [pkg_resources.resource_filename('casaconfig', '__data__/')]
 
 # location of required runtime measures data, takes precedence over location(s) in datapath list
 rundata = os.path.expanduser("~/.casa/measures")
+
+# automatically update measures data if not current (rundata must be user-writable)
+measures_update = True
 
 # log file path/name
 logfile='casalog_%s.log' % time.strftime("%Y-%m-%d", time.localtime())
@@ -58,41 +59,4 @@ crashreporter_enabled = True
 # include the user’s local site-packages in the python path if True. 
 # normally these are excluded to avoid any conflicts with CASA modules
 user_site = False
-
-
-
-########################################################################
-## Define what happens when CASA starts
-########################################################################
-## execute only when casatools is initialized
-if __name__.startswith('casatool'):
-    from casatools import logsink
-    logger = logsink(logfile)
-
-    ########################################################################
-    ## Default startup log information
-    ########################################################################
-    logger.post('########################################################################', 'INFO')
-    logger.post('Using default config.py from casaconfig', 'INFO')
-    logger.post('python version %s' % sys.version, 'INFO')
-    logger.post('########################################################################', 'INFO')
-
-    ########################################################################
-    ## Create a ~/.casa folder if not already present
-    ########################################################################
-    if not os.path.exists(os.path.expanduser("~/.casa")):
-        os.system('mkdir %s' % os.path.expanduser("~/.casa"))
-
-    ########################################################################
-    ## populate the operational __data__ folder if empty
-    ########################################################################
-    if len(os.listdir(datapath[0])) == 1:
-        pull_data(datapath[0], logger=logger)
-
-    ########################################################################
-    ## update the IERS measures data if not already done today
-    ########################################################################
-    measures_update(rundata, logger=logger)
-
-
 

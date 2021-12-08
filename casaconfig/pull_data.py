@@ -16,7 +16,7 @@ this module will be included in the api
 """
 
 
-def pull_data(path=None, branch=None, logger=None):
+def pull_data(path=None, branch=None, force=False, logger=None):
     """
     Pull down the package data contents from github to the specified directory
 
@@ -24,6 +24,7 @@ def pull_data(path=None, branch=None, logger=None):
        - path (str=None) - Folder path to place casadata contents. Default None places it in package installation directory
        - branch (str=None) - casadata repo branch to retrieve data from. Use 'master' for latest casadata trunk. Default None attempts
        to get data from repo branch matching this installation version.
+       - force (bool=False) - If True, always re-download the data even if already present in path. Default False will not download data if already populated
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
 
     Returns
@@ -34,6 +35,7 @@ def pull_data(path=None, branch=None, logger=None):
     import importlib_metadata
     import git
     import os
+    import numpy as np
 
     if path is None: path = pkg_resources.resource_filename('casaconfig', '__data__/')
     path = os.path.expanduser(path)
@@ -44,7 +46,14 @@ def pull_data(path=None, branch=None, logger=None):
         except:
             branch = 'v0.0.0'
 
-    print('Downloading data contents...')
+    # check contents of destination folder
+    expected = ['catalogs', 'demo', 'geodetic', 'alma', 'nrao', 'ephemerides', 'telescope_layout', 'dish_models', 'gui']
+    if (len(np.setdiff1d(expected, os.listdir(path))) == 0) and (force == False):
+        print('casaconfig found populated data folder')
+        if logger is not None: logger.post('casaconfig found populated data folder', 'INFO')
+        return
+
+    print('casaconfig downloading data contents...')
     if logger is not None: logger.post('casaconfig downloading data contents...', 'INFO')
 
     try:

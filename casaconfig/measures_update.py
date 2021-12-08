@@ -55,11 +55,11 @@ def measures_update(path=None, version=None, force=False, logger=None):
     # don't re-download the same data
     if not force:
         if ((version is not None) and (version == current)) or ((version is None) and (updated == datetime.today().strftime('%Y-%m-%d'))):
-            print('current measures detected, using version %s' % current)
+            print('casaconfig current measures detected, using version %s' % current)
             if logger is not None: logger.post('casaconfig current measures detected, using version %s' % current, 'INFO')
             return
 
-    print('connecting to ftp.astron.nl ...')
+    print('casaconfig connecting to ftp.astron.nl ...')
     if logger is not None: logger.post('casconfig connecting to ftp.astron.nl ...', 'INFO')
 
     ftp = FTP('ftp.astron.nl')
@@ -75,7 +75,7 @@ def measures_update(path=None, version=None, force=False, logger=None):
         return
     
     with open(os.path.join(path,'measures.ztar'), 'wb') as fid:
-        print('downloading data from ASTRON server ...')
+        print('casaconfig downloading data from ASTRON server ...')
         if logger is not None: logger.post('casaconfig downloading %s from ASTRON server ...' % target, 'INFO')
         ftp.retrbinary('RETR ' + target, fid.write)
     
