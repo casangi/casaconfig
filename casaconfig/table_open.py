@@ -11,6 +11,9 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+"""
+this module will be included in the api
+"""
 import os
 import numpy as np
 
@@ -83,6 +86,16 @@ def read_simple_table(infile):
 
 
 def table_open(path=None):
+    """
+    Open a variety of casadata contents
+
+    Parameters
+       - path (str=None) - Folder path to the data. Default None looks in current working directory
+
+    Returns
+        xarray.core.dataset.Dataset - xarray dataset or dataset of datasets
+
+    """
     import importlib.util
     import xarray
 
