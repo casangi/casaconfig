@@ -49,12 +49,12 @@ def pull_data(path=None, branch=None, force=False, logger=None):
     # check contents of destination folder
     expected = ['catalogs', 'demo', 'geodetic', 'alma', 'nrao', 'ephemerides', 'telescope_layout', 'dish_models', 'gui']
     if (len(np.setdiff1d(expected, os.listdir(path))) == 0) and (force == False):
-        print('casaconfig found populated data folder')
-        if logger is not None: logger.post('casaconfig found populated data folder', 'INFO')
+        print('casaconfig found populated data folder %s' % path)
+        if logger is not None: logger.post('casaconfig found populated data folder %s' % path, 'INFO')
         return
 
-    print('casaconfig downloading data contents...')
-    if logger is not None: logger.post('casaconfig downloading data contents...', 'INFO')
+    print('casaconfig downloading data contents to %s ...' % path)
+    if logger is not None: logger.post('casaconfig downloading data contents to %s ...' % path, 'INFO')
 
     try:
         repo = git.Repo.clone_from('https://github.com/casangi/casaconfig.git', path+'/tmp', branch=branch)
@@ -66,4 +66,3 @@ def pull_data(path=None, branch=None, force=False, logger=None):
 
     os.system('cp -r %s/tmp/data/* %s' % (path, path))
     os.system('rm -fr %s/tmp' % path)
-
