@@ -48,13 +48,13 @@ telemetry_enabled = True
 telemetry_log_directory = os.path.expanduser("~/.casa/telemetry")
 
 # maximum size of telemetry recording
-telemetry_log_limit = 1650
+telemetry_log_limit = 20480
 
 # telemetry recording size that triggers a report
-telemetry_log_size_interval = 30
+telemetry_log_size_interval = 60
 
 # telemetry recording report frequency
-telemetry_submit_interval = 20
+telemetry_submit_interval = 604800
 
 # allow anonymous crash reporting
 crashreporter_enabled = True
