@@ -14,6 +14,11 @@
 """
 this module will be included in the api
 """
+import argparse
+import os
+import re
+import time   # needed by argparse
+import pkg_resources
 
 
 def write_default_config(name, **kwargs):
@@ -29,10 +34,6 @@ def write_default_config(name, **kwargs):
        None
 
     """
-    import os
-    import re
-    import pkg_resources
-
     name = os.path.expanduser(name)
 
     # create directory if necessary
@@ -49,4 +50,33 @@ def write_default_config(name, **kwargs):
 
     # write to specified location
     with open(name, 'w') as fid:
+        print('writing %s' % name)
         fid.write(config)
+
+
+
+######################################
+## command line application
+######################################
+def main():
+    parser = argparse.ArgumentParser(prog='write_default_config', description='write out a default casa configuration file')
+    parser.add_argument('outfile', help='output filename to write the configuration to')
+
+    # open the default config.py inside this package and parse it to extract the default parameters/values
+    with open(pkg_resources.resource_filename('casaconfig', 'config.py'), 'r') as fid:
+        config = fid.read()
+        options = re.findall('\n\#(.+?)\n\s*(\S+?)\s*\=\s*(.+?)\n', config, flags=re.DOTALL)
+
+    for option in options:
+        parser.add_argument('--%s' % option[1], help=option[0].strip())
+
+    args = vars(parser.parse_args())
+    set_args = []
+    for arg in args:
+        if (arg != 'outfile') and (args[arg] is not None):
+            try:
+                set_args += [(arg, eval(args[arg]))]
+            except:
+                set_args += [(arg, args[arg])]
+    set_args = dict(set_args)
+    write_default_config(args['outfile'], **set_args)
