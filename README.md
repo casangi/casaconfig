@@ -72,7 +72,7 @@ nologger = False
 # avoid starting GUI tools when True. If True then the CASA logger is not started even if nologger is False
 nogui = False
 
-# the IPython prompt color scheme. Must be one of “Neutral”, “NoColor”, “Linux” or “LightBG”, default “Neutral”
+# the IPython prompt color scheme. Must be one of "Neutral", "NoColor", "Linux" or "LightBG", default "Neutral"
 # if an invalid color is given a warning message is printed and logged but CASA continues using the default color
 colors = "LightBG"
 
@@ -104,7 +104,7 @@ telemetry_submit_interval = 20
 # allow anonymous crash reporting
 crashreporter_enabled = True
 
-# include the user’s local site-packages in the python path if True. 
+# include the users local site-packages in the python path if True. 
 # normally these are excluded to avoid any conflicts with CASA modules
 user_site = False
 ```
