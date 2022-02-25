@@ -28,7 +28,7 @@ nologger = False
 nogui = False
 
 # the IPython prompt color scheme. Must be one of "Neutral", "NoColor", "Linux" or "LightBG", default "Neutral"
-colors = "LightBG"
+colors = "Neutral"
 
 # startup without a graphical backend if True
 agg = False
