@@ -417,7 +417,7 @@ def tocasatb(indata, outtable):
                 meanrad = _mean_radius(radiival[0], radiival[1], radiival[2])
                 headerdict['meanrad'] = {'unit': 'km', 'value': meanrad}
             print("Total data lines=", datalines)
-            print("Total number of lines in the file==", lcnt)
+            print("Total number of lines in the file=", lcnt)
             #print("headerdict=", headerdict)
         # output to a casa table
 
@@ -462,7 +462,7 @@ def tocasatb(indata, outtable):
                     else:
                         print("Cannot find ", inheadername)
 
-            print(cols)
+            #print(cols)
             print("expected n cols = ", len(cols))
             print("foundncols=", foundncols)
             if foundncols == len(cols):
