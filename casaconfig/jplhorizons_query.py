@@ -631,6 +631,11 @@ def _fill_keywords_from_dict(keydict, colkeys, tablename):
         for col in datacolnames:
             if col in colkeys:
                 _tb.putcolkeyword(col, 'QuantumUnits', colkeys[col])
+        # add table info required by measComet
+        maintbinfo = {'readme': 'Derivied by jplhorizons-query from JPL-Horizons API '
+                                '(https://ssd.jpl.nasa.gov/api/horizons.api)',
+                      'subType':'Comet',
+                      'type': 'IERS'}
         _tb.flush()
         _tb.done()
     except RuntimeError:
