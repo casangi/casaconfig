@@ -418,7 +418,7 @@ def tocasatb(indata, outtable):
                 headerdict['meanrad'] = {'unit': 'km', 'value': meanrad}
             print("Total data lines=", datalines)
             print("Total number of lines in the file==", lcnt)
-            print("headerdict=", headerdict)
+            #print("headerdict=", headerdict)
         # output to a casa table
 
         # check the input data columns and stored the order as indices
