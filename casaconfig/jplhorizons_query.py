@@ -636,6 +636,7 @@ def _fill_keywords_from_dict(keydict, colkeys, tablename):
                                 '(https://ssd.jpl.nasa.gov/api/horizons.api)',
                       'subType':'Comet',
                       'type': 'IERS'}
+        _tb.putinfo(maintbinfo)
         _tb.flush()
         _tb.done()
     except RuntimeError:
