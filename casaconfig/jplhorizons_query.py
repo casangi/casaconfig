@@ -12,7 +12,7 @@ _tb = table()
 _qa = quanta()
 _me = measures()
 
-def getjplephem(objectname, starttime, stoptime, incr, outtable, asis=False, savetofile=False):
+def gethorizonsephem(objectname, starttime, stoptime, incr, outtable, asis=False, savetofile=False):
     """
     Main driver function for ephemeris data query from JPL-Horizons
     """

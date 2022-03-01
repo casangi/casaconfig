@@ -49,4 +49,4 @@ for obj in objlist:
     else:
         step = instep
     outtable = obj.capitalize()+'_'+str(startmjd)+'-'+str(endmjd)+'dUTC_new.tab'
-    jplhorizons_query.getjplephem(obj, starttime, stoptime, step, outtable, savetofile=True)
+    jplhorizons_query.gethorizonsephem(obj, starttime, stoptime, step, outtable, savetofile=True)
