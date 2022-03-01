@@ -120,7 +120,7 @@ def queryhorizons(target, starttime, stoptime, stepsize, quantities, ang_format,
 
     pardata = urlencode(values, doseq=True, encoding='utf-8')
     params = pardata.encode('ascii')
-    print("params=", params)
+    #print("params=", params)
 
     req = Request(urlbase, params)
     datastr = None
@@ -230,7 +230,7 @@ def tocasatb(indata, outtable):
     try:
         # Scan the original data
         if type(indata) == dict and 'result' in indata:
-            print("ephem data dict")
+            #print("ephem data dict")
             ephemdata = indata['result']
         elif type(indata) == str:
             if os.path.exists(indata):
@@ -346,7 +346,7 @@ def tocasatb(indata, outtable):
                             print("Unexpected number or matches for Target radii:{} (expected 2)".format(m.groups))
                 #rotational period (few pattens seem to exist)
                 elif re.search(r'rot. period|Rotational period', line):
-                    print("Found rot. period!! ",line)
+                    #print("Found rot. period!! ",line)
                  #   m = re.search(r'rot. period\s+\S*=\s*([0-9.]+)(?:\s*\+-[0-9.]+)?\s*(\w+)|'
                  #   m = re.search(r'rot. period\s+\S*=\s*([0-9.]+h\s*[0-9.]+m\s*[0-9.]+\s*s|'
                   #                '([0-9.]+)(?:\s*\+-[0-9.]+)?\s*([dh]))|'
@@ -649,4 +649,4 @@ def _clean_up(filelist):
     for f in filelist:
         if os.path.exists(f): 
             os.remove(f) 
-            print("Deleting ", f)
+            #print("Deleting ", f)
