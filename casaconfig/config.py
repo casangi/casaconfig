@@ -37,7 +37,7 @@ agg = False
 pipeline = False
 
 # create and use an IPython log in the current directory if True
-iplog = True
+iplog = False
 
 # allow anonymous usage reporting
 telemetry_enabled = True
