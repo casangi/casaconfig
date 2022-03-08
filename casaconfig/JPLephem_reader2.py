@@ -1,17 +1,16 @@
-"""
-Updated version to support the current JPL-Horizons query results as of 2013 June.
-(when S-T-O is requested the current query result returns phi, PAB-LON, PAB-LAT along
-with S-T-O value).  
+# Updated version to support the current JPL-Horizons query results as of 2013 June.
+# (when S-T-O is requested the current query result returns phi, PAB-LON, PAB-LAT along
+# with S-T-O value).
+#
+# casapy functions for converting ASCII ephemerides from JPL-Horizons into
+# CASA tables and installing them where casapy can find them.
+#
+# jplfiles_to_repository() puts it all together, so it is most likely the
+# function you want.
+#
+# There are various utilities like convert_radec, datestr*, get_num_from_str,
+# mean_radius*, and construct_tablepath defined in here as well.
 
-casapy functions for converting ASCII ephemerides from JPL-Horizons into
-CASA tables and installing them where casapy can find them.
-                    
-jplfiles_to_repository() puts it all together, so it is most likely the
-function you want.
-
-There are various utilities like convert_radec, datestr*, get_num_from_str,
-mean_radius*, and construct_tablepath defined in here as well.
-"""
 
 from __future__ import absolute_import
 from __future__ import print_function

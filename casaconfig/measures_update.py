@@ -23,8 +23,8 @@ def measures_update(path=None, version=None, force=False, logger=None):
     
     Parameters
        - path (str=None) - Folder path to place updated measures data. Default None places it in package installation directory
-       - version (str=None) - Version of measures data to retrieve (in the form of yyyymmdd-160001, see measures_available()). Default None retrieves the latest
-       - force (bool=False) - If True, always re-download the measures data even if matching set found in path. Default False will not download duplicate measures
+       - version (str=None) - Version of measures data to retrieve (usually in the form of yyyymmdd-160001.ztar, see measures_available()). Default None retrieves the latest
+       - force (bool=False) - If True, always re-download the measures data. Default False will not download measures data if already updated today unless version parameter is specified and different from what was last downloaded.
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
         
     Returns

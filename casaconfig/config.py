@@ -13,7 +13,7 @@ populate_data = True
 measures_update = True
 
 # log file path/name
-logfile='casalog_%s.log' % time.strftime("%Y-%m-%d", time.localtime())
+logfile='casalog_%s.log' % time.strftime("%Y%m%d-%H%M%S", time.localtime())
 
 # do not create a log file when True, If True, then any logfile value is ignored and there is no log file
 nologfile = False

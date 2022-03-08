@@ -87,7 +87,9 @@ def read_simple_table(infile):
 
 def table_open(path=None):
     """
-    Open a variety of casadata contents
+    (addon) Open a variety of casadata contents.
+
+    This function depends on the python-casacore package which **must be manually (pip) installed by the user**
 
     Parameters
        - path (str=None) - Folder path to the data. Default None looks in current working directory

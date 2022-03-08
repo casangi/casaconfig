@@ -23,7 +23,7 @@ def pull_data(path=None, branch=None, force=False, logger=None):
     Parameters
        - path (str=None) - Folder path to place casadata contents. Default None places it in package installation directory
        - branch (str=None) - casadata repo branch to retrieve data from. Use 'master' for latest casadata trunk. Default None attempts
-       to get data from repo branch matching this installation version.
+         to get data from repo branch matching this installation version.
        - force (bool=False) - If True, always re-download the data even if already present in path. Default False will not download data if already populated
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
 
