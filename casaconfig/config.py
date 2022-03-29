@@ -1,7 +1,10 @@
 import os, time, pkg_resources
 
 # list of paths where CASA should search for data subdirectories
-datapath = [pkg_resources.resource_filename('casaconfig', '__data__/')]
+if 'casaconfig' in [p.project_name for p in pkg_resources.working_set]:
+    datapath = [pkg_resources.resource_filename('casaconfig', '__data__/')]
+else:
+    datapath = [pkg_resources.resource_filename('casadata', '__data__/')] 
 
 # location of required runtime measures data, takes precedence over location(s) in datapath list
 rundata = os.path.expanduser("~/.casa/measures")
