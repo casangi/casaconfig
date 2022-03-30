@@ -1,5 +1,9 @@
 # casaconfig
-Runtime data necessary for CASA operation
+Runtime data necessary for CASA operation.
+
+- Latest documentation [![Documentation Status](https://readthedocs.org/projects/casaconfig/badge/?version=latest)](https://casaconfig.readthedocs.io/en/latest/?badge=latest)
+- Stable documentation [![Documentation Status](https://readthedocs.org/projects/casaconfig/badge/?version=stable)](https://casaconfig.readthedocs.io/en/stable/?badge=stable)
+      
 
 ## Release Instructions
 1. Create a release branch with a version name (ie v1.6.2)
