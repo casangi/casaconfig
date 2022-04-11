@@ -3,11 +3,10 @@ import os, time, pkg_resources
 # list of paths where CASA should search for data subdirectories
 if 'casaconfig' in [p.project_name for p in pkg_resources.working_set]:
     datapath = [pkg_resources.resource_filename('casaconfig', '__data__/')]
+    # location of required runtime measures data, takes precedence over location(s) in datapath list
+    rundata = os.path.expanduser("~/.casa/measures")
 else:
-    datapath = [pkg_resources.resource_filename('casadata', '__data__/')] 
-
-# location of required runtime measures data, takes precedence over location(s) in datapath list
-rundata = os.path.expanduser("~/.casa/measures")
+    datapath = [pkg_resources.resource_filename('casadata', '__data__/')]
 
 # automatically populate the datapath[0] location if not already done
 populate_data = True
@@ -62,4 +61,3 @@ crashreporter_enabled = True
 
 # include the user's local site-packages in the python path if True. May conflict with CASA modules
 user_site = False
-
