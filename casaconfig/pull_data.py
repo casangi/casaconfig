@@ -36,6 +36,7 @@ def pull_data(path=None, branch=None, force=False, logger=None):
     import git
     import os
     import numpy as np
+    import sys
 
     if path is None: path = pkg_resources.resource_filename('casaconfig', '__data__/')
     path = os.path.expanduser(path)
@@ -49,7 +50,7 @@ def pull_data(path=None, branch=None, force=False, logger=None):
     # check contents of destination folder
     expected = ['catalogs', 'demo', 'geodetic', 'alma', 'nrao', 'ephemerides', 'telescope_layout', 'dish_models', 'gui']
     if (len(np.setdiff1d(expected, os.listdir(path))) == 0) and (force == False):
-        print('casaconfig found populated data folder %s' % path)
+        print('casaconfig found populated data folder %s' % path, file = sys.stderr )
         if logger is not None: logger.post('casaconfig found populated data folder %s' % path, 'INFO')
         return
 
@@ -60,7 +61,7 @@ def pull_data(path=None, branch=None, force=False, logger=None):
         repo = git.Repo.clone_from('https://github.com/casangi/casaconfig.git', path+'/tmp', branch=branch)
     except:
         if logger is not None: logger.post('casaconfig cant find data branch %s, defaulting to master' % branch, 'WARN')
-        else: print("WARNING: can't find data branch %s, defaulting to master" % branch)
+        else: print("WARNING: can't find data branch %s, defaulting to master" % branch, file = sys.stderr )
 
         repo = git.Repo.clone_from('https://github.com/casangi/casaconfig.git', path + '/tmp', branch='master')
 
