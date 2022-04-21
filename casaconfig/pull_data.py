@@ -54,7 +54,7 @@ def pull_data(path=None, branch=None, force=False, logger=None):
         if logger is not None: logger.post('casaconfig found populated data folder %s' % path, 'INFO')
         return
 
-    print('casaconfig downloading data contents to %s ...' % path)
+    print('casaconfig downloading data contents to %s ...' % path, file = sys.stderr )
     if logger is not None: logger.post('casaconfig downloading data contents to %s ...' % path, 'INFO')
 
     try:
