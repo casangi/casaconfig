@@ -1,63 +1,56 @@
-import os, time, pkg_resources
+########################################################################
+#
+# Copyright (C) 2022
+# Associated Universities, Inc. Washington DC, USA.
+#
+# This script is free software; you can redistribute it and/or modify it
+# under the terms of the GNU Library General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Library General Public
+# License for more details.
+#
+# You should have received a copy of the GNU Library General Public License
+# along with this library; if not, write to the Free Software Foundation,
+# Inc., 675 Massachusetts Ave, Cambridge, MA 02139, USA.
+#
+# Correspondence concerning AIPS++ should be adressed as follows:
+#        Internet email: aips2-request@nrao.edu.
+#        Postal address: AIPS++ Project Office
+#                        National Radio Astronomy Observatory
+#                        520 Edgemont Road
+#                        Charlottesville, VA 22903-2475 USA
+#
+########################################################################
+'''
+Configuration state for all CASA python packages.
+DO NOT ADD new configuration variables here. Instead, add them in
+_config_defaults.py (found in the same directory as this file).
+'''
+from . import _config_defaults
 
-# list of paths where CASA should search for data subdirectories
-if 'casaconfig' in [p.project_name for p in pkg_resources.working_set]:
-    datapath = [pkg_resources.resource_filename('casaconfig', '__data__/')]
-    # location of required runtime measures data, takes precedence over location(s) in datapath list
-    rundata = os.path.expanduser("~/.casa/measures")
-else:
-    datapath = [pkg_resources.resource_filename('casadata', '__data__/')]
+## list of config variables
+__defaults = [ x for x in dir(_config_defaults) if not x.startswith('_') ]
 
-# automatically populate the datapath[0] location if not already done
-populate_data = True
+## files to be evaluated/loaded
+__config_files = [ 'casaconfigsite', '~/.casa/config.py' ]
 
-# automatically update measures data if not current (rundata must be user-writable)
-measures_update = True
+import pkgutil as _pkgutil
+import os as _os
 
-# log file path/name
-logfile='casa-%s.log' % time.strftime("%Y%m%d-%H%M%S", time.gmtime())
+## evaluate config files
+for __f in [ _os.path.expanduser(f) for f in __config_files ]:
+    if __f.find('/') >= 0 and _os.path.exists(__f):
+        ## config file is a fully qualified path
+        exec(open(__f).read( ),_config_defaults._globals( ))
+    else:
+        ## config file is a package name
+        __pkg = _pkgutil.get_loader(__f)
+        if __pkg is not None:
+            exec(open(__pkg.get_filename( )).read( ),_config_defaults._globals( ))
 
-# do not create a log file when True, If True, then any logfile value is ignored and there is no log file
-nologfile = False
-
-# print log output to terminal when True (in addition to any logfile and CASA logger)
-log2term = False
-
-# do not start the CASA logger when True
-nologger = False
-
-# avoid starting GUI tools when True. If True then the CASA logger is not started even if nologger is False
-nogui = False
-
-# the IPython prompt color scheme. Must be one of "Neutral", "NoColor", "Linux" or "LightBG", default "Neutral"
-colors = "Neutral"
-
-# startup without a graphical backend if True
-agg = False
-
-# attempt to load the pipeline modules and set other options appropriate for pipeline use if True
-pipeline = False
-
-# create and use an IPython log in the current directory if True
-iplog = False
-
-# allow anonymous usage reporting
-telemetry_enabled = True
-
-# location to place telemetry data prior to reporting
-telemetry_log_directory = os.path.expanduser("~/.casa/telemetry")
-
-# maximum size of telemetry recording
-telemetry_log_limit = 20480
-
-# telemetry recording size that triggers a report
-telemetry_log_size_interval = 60
-
-# telemetry recording report frequency
-telemetry_submit_interval = 604800
-
-# allow anonymous crash reporting
-crashreporter_enabled = True
-
-# include the user's local site-packages in the python path if True. May conflict with CASA modules
-user_site = False
+for __v in __defaults:
+    globals()[__v] = getattr(_config_defaults,__v,None)
