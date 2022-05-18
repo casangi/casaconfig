@@ -32,6 +32,7 @@ _config_defaults.py (found in the same directory as this file).
 '''
 from . import _config_defaults
 import argparse as __argparse
+import traceback as __traceback
 import sys as __sys
 import os as __os
 
@@ -50,6 +51,7 @@ __user_config = [ ] if __flags.noconfig else [ __os.path.join(__flags.configpath
 ## files to be evaluated/loaded
 __config_files = [ 'casaconfigsite', *__user_config ]
 __loaded_config_files = [ __file__ ]
+__errors_encountered = { }
 
 import pkgutil as __pkgutil
 
@@ -57,18 +59,34 @@ import pkgutil as __pkgutil
 for __f in [ __os.path.expanduser(f) for f in __config_files ]:
     if __f.find('/') >= 0 and __os.path.exists(__f):
         ## config file is a fully qualified path
-        exec(open(__f).read( ),_config_defaults._globals( ))
-        __loaded_config_files.append( __f )
+        try:
+            __orig = { k: _config_defaults._globals( )[k] for k in __defaults }
+            exec( open(__f).read( ), __orig )
+        except Exception as e:
+            __errors_encountered[__f] = __traceback.format_exc( )
+        else:
+            for __v in __defaults:
+                _config_defaults._globals( )[__v] = __orig[__v]
+            __loaded_config_files.append( __f )
     else:
         ## config file is a package name
         __pkg = __pkgutil.get_loader(__f)
         if __pkg is not None:
-            exec(open(__pkg.get_filename( )).read( ),_config_defaults._globals( ))
-            __loaded_config_files.append( __pkg.get_filename( ) )
+            try:
+                __orig = { k: _config_defaults._globals( )[k] for k in __defaults }
+                exec(open(__pkg.get_filename( )).read( ),__orig)
+            except Exception as e:
+                __errors_encountered[__pkg.get_filename( )] = __traceback.format_exc( )
+            else:
+                for __v in __defaults:
+                    _config_defaults._globals( )[__v] = __orig[__v]
+                __loaded_config_files.append( __pkg.get_filename( ) )
 
 
 for __v in __defaults:
     globals()[__v] = getattr(_config_defaults,__v,None)
 
-def load_history( ):
+def load_success( ):
     return __loaded_config_files
+def load_failure( ):
+    return __errors_encountered
