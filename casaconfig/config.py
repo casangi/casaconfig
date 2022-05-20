@@ -42,7 +42,7 @@ from . import _io_redirect as _io
 __defaults = [ x for x in dir(_config_defaults) if not x.startswith('_') ]
 
 ## look for arguments that affect casaconfig
-__parser = __argparse.ArgumentParser( )
+__parser = __argparse.ArgumentParser(add_help=False)
 __parser.add_argument( "--noconfig", dest='noconfig', action='store_const', const=True, default=False,
                        help='do not load user configuration file' )
 __parser.add_argument( "--configfile",dest='configfile', default='~/.casa/config.py',
@@ -55,7 +55,6 @@ __config_files = [ 'casaconfigsite', *__user_config ]
 __loaded_config_files = [ __file__ ]
 __errors_encountered = { }
 
-
 ## evaluate config files
 ## ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 ## If the the execution mode of python is module execution (e.g. "python3 -m casatools") then
@@ -64,7 +63,7 @@ __errors_encountered = { }
 ## be used by scripts.
 ##
 _module_execution = len(__sys.argv) > 0 and __sys.argv[0] == '-m'
-with (_io.stdout_redirected(to=__os.devnull), _io.merged_stderr_stdout( )) if _module_execution else _io.no_redirect( ):
+with _io.all_redirected(to=__os.devnull) if _module_execution else _io.no_redirect( ):
     for __f in [ __os.path.expanduser(f) for f in __config_files ]:
         if __f.find('/') >= 0 and __os.path.exists(__f):
             ## config file is a fully qualified path
