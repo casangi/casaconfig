@@ -50,6 +50,8 @@ else:
     datapath = [ ]
     measurespath = _os.path.expanduser("~/.casa/measures")
 
+cachedir = '~/.casa'
+
 # automatically populate the measurespath[0] location if not already done
 populate_data = True
 
