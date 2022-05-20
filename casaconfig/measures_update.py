@@ -66,7 +66,7 @@ def measures_update(path=None, version=None, force=False, logger=None):
     ftp = FTP('ftp.astron.nl')
     rc = ftp.login()
     rc = ftp.cwd('outgoing/Measures')
-    files = sorted([ff for ff in ftp.nlst() if (len(ff) > 0) and (not ff.endswith('.dat'))])
+    files = sorted([ff for ff in ftp.nlst() if (len(ff) > 0) and (not ff.endswith('.dat')) and (ftp.size(ff) > 0)])
 
     # target filename to download
     target = files[-1] if version is None else version
