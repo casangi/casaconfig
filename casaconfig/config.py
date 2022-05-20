@@ -42,11 +42,11 @@ __defaults = [ x for x in dir(_config_defaults) if not x.startswith('_') ]
 ## look for arguments that affect casaconfig
 __parser = __argparse.ArgumentParser( )
 __parser.add_argument( "--noconfig", dest='noconfig', action='store_const', const=True, default=False,
-                       help='do not load user config.py' )
-__parser.add_argument( "--configpath",dest='configpath', default='~/.casa',
-                            help='location for startup files, internal working files')
+                       help='do not load user configuration file' )
+__parser.add_argument( "--configfile",dest='configfile', default='~/.casa/config.py',
+                            help='location of the user configuration file')
 __flags,__args = __parser.parse_known_args(__sys.argv)
-__user_config = [ ] if __flags.noconfig else [ __os.path.join(__flags.configpath,'config.py') ]
+__user_config = [ ] if __flags.noconfig else [ __flags.configfile ]
 
 ## files to be evaluated/loaded
 __config_files = [ 'casaconfigsite', *__user_config ]
