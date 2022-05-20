@@ -31,26 +31,29 @@ New configuration variables should be added here.
 '''
 import os as _os
 import time as _time
-import pkg_resources as _pkg_resources
+import pkgutil as _pkgutil
 
 def _globals( ):
     return globals()
 
 # list of paths where CASA should search for data subdirectories
-if 'casaconfig' in [p.project_name for p in _pkg_resources.working_set]:
-    datapath = [_pkg_resources.resource_filename('casaconfig', '__data__/')]
-    # location of required runtime measures data, takes precedence over location(s) in datapath list
-    rundata = _os.path.expanduser("~/.casa/measures")
-else:
-    try:
-        datapath = [_pkg_resources.resource_filename('casadata', '__data__/')]
-    except:
+_casaconfig_loader = _pkgutil.get_loader('casaconfig')
+if _casaconfig_loader:
+    _f = _os.path.join(_os.path.dirname(_casaconfig_loader.path),'__data__')
+    if _os.path.exists(_os.path.join(_f,'geodetic')):
+        datapath = [ _f ]
+        measurespath = _f
+    else:
         datapath = [ ]
+        measurespath = _os.path.expanduser("~/.casa/measures")
+else:
+    datapath = [ ]
+    measurespath = _os.path.expanduser("~/.casa/measures")
 
-# automatically populate the datapath[0] location if not already done
+# automatically populate the measurespath[0] location if not already done
 populate_data = True
 
-# automatically update measures data if not current (rundata must be user-writable)
+# automatically update measures data if not current (measurespath must be user-writable)
 measures_update = True
 
 # log file path/name
