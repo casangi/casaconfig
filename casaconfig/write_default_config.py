@@ -40,8 +40,8 @@ def write_default_config(name, **kwargs):
     if ('/' in name) and (name.rindex('/') > 0) and (not os.path.exists(name[:name.rindex('/')])):
         os.system('mkdir %s' % name[:name.rindex('/')])
 
-    # read default config.py from package installation
-    with open(pkg_resources.resource_filename('casaconfig', 'config.py'), 'r') as fid:
+    # read default values from package installation
+    with open(pkg_resources.resource_filename('casaconfig', '_config_defaults.py'), 'r') as fid:
         config = fid.read()
 
     # modify specified keys
@@ -62,8 +62,8 @@ def main():
     parser = argparse.ArgumentParser(prog='write_default_config', description='write out a default casa configuration file')
     parser.add_argument('outfile', help='output filename to write the configuration to')
 
-    # open the default config.py inside this package and parse it to extract the default parameters/values
-    with open(pkg_resources.resource_filename('casaconfig', 'config.py'), 'r') as fid:
+    # open the default values inside this package and parse it to extract the default parameters/values
+    with open(pkg_resources.resource_filename('casaconfig', '_config_defaults.py'), 'r') as fid:
         config = fid.read()
         options = re.findall('\n\#(.+?)\n\s*(\S+?)\s*\=\s*(.+?)\n', config, flags=re.DOTALL)
 
