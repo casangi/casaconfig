@@ -65,17 +65,18 @@ __errors_encountered = { }
 _module_execution = len(__sys.argv) > 0 and __sys.argv[0] == '-m'
 with _io.all_redirected(to=__os.devnull) if _module_execution else _io.no_redirect( ):
     for __f in [ __os.path.expanduser(f) for f in __config_files ]:
-        if __f.find('/') >= 0 and __os.path.exists(__f):
-            ## config file is a fully qualified path
-            try:
-                __orig = { k: _config_defaults._globals( )[k] for k in __defaults }
-                exec( open(__f).read( ), __orig )
-            except Exception as e:
-                __errors_encountered[__f] = __traceback.format_exc( )
-            else:
-                for __v in __defaults:
-                    _config_defaults._globals( )[__v] = __orig[__v]
-                __loaded_config_files.append( __f )
+        if __f.find('/') >= 0:
+            if __os.path.exists(__f):
+                 ## config file is a fully qualified path
+                 try:
+                     __orig = { k: _config_defaults._globals( )[k] for k in __defaults }
+                     exec( open(__f).read( ), __orig )
+                 except Exception as e:
+                     __errors_encountered[__f] = __traceback.format_exc( )
+                 else:
+                     for __v in __defaults:
+                         _config_defaults._globals( )[__v] = __orig[__v]
+                     __loaded_config_files.append( __f )
         else:
             ## config file is a package name
             __pkg = __pkgutil.get_loader(__f)
