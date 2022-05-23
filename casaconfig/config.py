@@ -28,7 +28,7 @@
 '''
 Configuration state for all CASA python packages.
 DO NOT ADD new configuration variables here. Instead, add them in
-_config_defaults.py (found in the same directory as this file).
+_config_defaults_static.py (found in the same directory as this file).
 '''
 from . import _config_defaults
 import argparse as __argparse

@@ -19,6 +19,8 @@ import os
 import re
 import time   # needed by argparse
 import pkg_resources
+from . import _config_defaults
+from . import config
 
 
 def write_default_config(name, **kwargs):
@@ -40,18 +42,29 @@ def write_default_config(name, **kwargs):
     if ('/' in name) and (name.rindex('/') > 0) and (not os.path.exists(name[:name.rindex('/')])):
         os.system('mkdir %s' % name[:name.rindex('/')])
 
-    # read default values from package installation
-    with open(pkg_resources.resource_filename('casaconfig', '_config_defaults.py'), 'r') as fid:
-        config = fid.read()
+    # find config variable names
+    __default_names = [ x for x in dir(_config_defaults) if not x.startswith('_') ]
+
+    # generate default values
+    __defaults = { k: getattr(config,k) for k in __default_names }
+
+    # replace config values with **kwargs
+    for k,v in kwargs.items( ):
+        if k in __defaults:
+            __defaults[k] = v
+
+    # read static default contents
+    with open(pkg_resources.resource_filename('casaconfig', '_config_defaults_static.py'), 'r') as fid:
+        config_contents = fid.read()
 
     # modify specified keys
-    for key, value in kwargs.items():
-        config = re.sub('%s\s*\=\s*.+?\n'%key, r'%s = %s\n'%(key,value), config, flags=re.DOTALL)
+    for key, value in __defaults.items():
+        config_contents = re.sub('%s\s*\=\s*.+?\n'%key, r'%s = %s\n'%(key,repr(value)), config_contents, flags=re.DOTALL)
 
     # write to specified location
     with open(name, 'w') as fid:
         print('writing %s' % name)
-        fid.write(config)
+        fid.write(config_contents)
 
 
 
