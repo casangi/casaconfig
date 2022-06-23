@@ -31,22 +31,18 @@ DO NOT ADD new configuration variables here. Instead, add them in
 _config_defaults_static.py (found in the same directory as this file).
 '''
 from . import _config_defaults
-import argparse as __argparse
 import traceback as __traceback
 import sys as __sys
 import os as __os
 import pkgutil as __pkgutil
 from . import _io_redirect as _io
+from .get_argparser import get_argparser as __get_argparser
 
 ## list of config variables
 __defaults = [ x for x in dir(_config_defaults) if not x.startswith('_') ]
 
-## look for arguments that affect casaconfig
-__parser = __argparse.ArgumentParser(add_help=False)
-__parser.add_argument( "--noconfig", dest='noconfig', action='store_const', const=True, default=False,
-                       help='do not load user configuration file' )
-__parser.add_argument( "--configfile",dest='configfile', default='~/.casa/config.py',
-                            help='location of the user configuration file')
+## get the ArgumentParser with the arguments needed by casaconfig, help is turned off
+__parser = __get_argparser()
 __flags,__args = __parser.parse_known_args(__sys.argv)
 __user_config = [ ] if __flags.noconfig else [ __flags.configfile ]
 

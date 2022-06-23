@@ -6,6 +6,9 @@ measurespath = "~/.casa/measures"
 
 cachedir = '~/.casa'
 
+# location of the optional user's startup.py
+startupfile = '~/.casa/startup.py'
+
 # automatically populate the measurespath[0] location if not already done
 populate_data = True
 
