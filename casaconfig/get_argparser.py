@@ -25,4 +25,6 @@ def get_argparser(add_help=False):
                          help='do not load user configuration file' )
     parser.add_argument( "--configfile",dest='configfile', default='~/.casa/config.py',
                          help='location of the user configuration file')
+    parser.add_argument( "--cachedir",dest='cachedir',default=None,
+                         help="location for internal working files")
     return parser

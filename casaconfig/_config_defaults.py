@@ -31,11 +31,23 @@ DO NOT ADD new configuration variables here. Instead, add them in
 _config_defaults_static.py (found in the same directory as this file).
 '''
 import os as _os
+import sys as _sys
 import time as _time
 import pkgutil as _pkgutil
 
+from .get_argparser import get_argparser as __get_argparser
+
+## get the ArgumentParser with the arguments needed by casaconfig, help is turned off
+## this is used to supply command line configuration variales to the static defaults
+## specification.
+__parser = __get_argparser()
+__flags,__args = __parser.parse_known_args(_sys.argv)
+
 def _globals( ):
     return globals()
+
+if __flags.cachedir is not None:
+    cachedir = __flags.cachedir
 
 exec( open(_os.path.join(_os.path.dirname(__file__),'_config_defaults_static.py')).read( ), globals( ) )
 
