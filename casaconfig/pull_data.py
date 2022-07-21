@@ -23,7 +23,7 @@ def pull_data(path=None, branch=None, force=False, logger=None):
     Parameters
        - path (str=None) - Folder path to place casadata contents. Default None places it in package installation directory
        - branch (str=None) - casadata repo branch to retrieve data from. Use 'master' for latest casadata trunk. Default None attempts
-       to get data from repo branch matching this installation version.
+         to get data from repo branch matching this installation version.
        - force (bool=False) - If True, always re-download the data even if already present in path. Default False will not download data if already populated
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
 
@@ -36,6 +36,7 @@ def pull_data(path=None, branch=None, force=False, logger=None):
     import git
     import os
     import numpy as np
+    import sys
 
     if path is None: path = pkg_resources.resource_filename('casaconfig', '__data__/')
     path = os.path.expanduser(path)
@@ -49,18 +50,18 @@ def pull_data(path=None, branch=None, force=False, logger=None):
     # check contents of destination folder
     expected = ['catalogs', 'demo', 'geodetic', 'alma', 'nrao', 'ephemerides', 'telescope_layout', 'dish_models', 'gui']
     if (len(np.setdiff1d(expected, os.listdir(path))) == 0) and (force == False):
-        print('casaconfig found populated data folder %s' % path)
+        print('casaconfig found populated data folder %s' % path, file = sys.stderr )
         if logger is not None: logger.post('casaconfig found populated data folder %s' % path, 'INFO')
         return
 
-    print('casaconfig downloading data contents to %s ...' % path)
+    print('casaconfig downloading data contents to %s ...' % path, file = sys.stderr )
     if logger is not None: logger.post('casaconfig downloading data contents to %s ...' % path, 'INFO')
 
     try:
         repo = git.Repo.clone_from('https://github.com/casangi/casaconfig.git', path+'/tmp', branch=branch)
     except:
         if logger is not None: logger.post('casaconfig cant find data branch %s, defaulting to master' % branch, 'WARN')
-        else: print("WARNING: can't find data branch %s, defaulting to master" % branch)
+        else: print("WARNING: can't find data branch %s, defaulting to master" % branch, file = sys.stderr )
 
         repo = git.Repo.clone_from('https://github.com/casangi/casaconfig.git', path + '/tmp', branch='master')
 

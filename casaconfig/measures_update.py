@@ -23,8 +23,8 @@ def measures_update(path=None, version=None, force=False, logger=None):
     
     Parameters
        - path (str=None) - Folder path to place updated measures data. Default None places it in package installation directory
-       - version (str=None) - Version of measures data to retrieve (in the form of yyyymmdd-160001, see measures_available()). Default None retrieves the latest
-       - force (bool=False) - If True, always re-download the measures data even if matching set found in path. Default False will not download duplicate measures
+       - version (str=None) - Version of measures data to retrieve (usually in the form of yyyymmdd-160001.ztar, see measures_available()). Default None retrieves the latest
+       - force (bool=False) - If True, always re-download the measures data. Default False will not download measures data if already updated today unless version parameter is specified and different from what was last downloaded.
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
         
     Returns
@@ -35,6 +35,7 @@ def measures_update(path=None, version=None, force=False, logger=None):
     import os
     from datetime import datetime
     import pkg_resources
+    import sys
     
     if path is None: path = pkg_resources.resource_filename('casaconfig', '__data__/')
     path = os.path.expanduser(path)
@@ -55,17 +56,17 @@ def measures_update(path=None, version=None, force=False, logger=None):
     # don't re-download the same data
     if not force:
         if ((version is not None) and (version == current)) or ((version is None) and (updated == datetime.today().strftime('%Y-%m-%d'))):
-            print('casaconfig current measures detected in %s, using version %s' % (path, current))
+            print('casaconfig current measures detected in %s, using version %s' % (path, current), file = sys.stderr )
             if logger is not None: logger.post('casaconfig current measures detected in %s, using version %s' % (path, current), 'INFO')
             return
 
-    print('casaconfig connecting to ftp.astron.nl ...')
+    print('casaconfig connecting to ftp.astron.nl ...', file = sys.stderr )
     if logger is not None: logger.post('casconfig connecting to ftp.astron.nl ...', 'INFO')
 
     ftp = FTP('ftp.astron.nl')
     rc = ftp.login()
     rc = ftp.cwd('outgoing/Measures')
-    files = sorted([ff for ff in ftp.nlst() if (len(ff) > 0) and (not ff.endswith('.dat'))])
+    files = sorted([ff for ff in ftp.nlst() if (len(ff) > 0) and (not ff.endswith('.dat')) and (ftp.size(ff) > 0)])
 
     # target filename to download
     target = files[-1] if version is None else version
@@ -75,7 +76,7 @@ def measures_update(path=None, version=None, force=False, logger=None):
         return
     
     with open(os.path.join(path,'measures.ztar'), 'wb') as fid:
-        print('casaconfig downloading %s from ASTRON server to %s ...' % (target, path))
+        print('casaconfig downloading %s from ASTRON server to %s ...' % (target, path), file = sys.stderr )
         if logger is not None: logger.post('casaconfig downloading %s from ASTRON server to %s ...' % (target, path), 'INFO')
         ftp.retrbinary('RETR ' + target, fid.write)
     

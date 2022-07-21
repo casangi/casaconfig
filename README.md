@@ -1,5 +1,9 @@
 # casaconfig
-Runtime data necessary for CASA operation
+Runtime data necessary for CASA operation.
+
+- Latest documentation [![Documentation Status](https://readthedocs.org/projects/casaconfig/badge/?version=latest)](https://casaconfig.readthedocs.io/en/latest/?badge=latest)
+- Stable documentation [![Documentation Status](https://readthedocs.org/projects/casaconfig/badge/?version=stable)](https://casaconfig.readthedocs.io/en/stable/?badge=stable)
+      
 
 ## Release Instructions
 1. Create a release branch with a version name (ie v1.6.2)
@@ -49,12 +53,12 @@ import os, time, pkg_resources
 datapath = [pkg_resources.resource_filename('casaconfig', '__data__/')]
 
 # location of required runtime measures data, takes precedence over location(s) in datapath list
-rundata = os.path.expanduser("~/.casa/measures")
+measurespath = os.path.expanduser("~/.casa/measures")
 
 # automatically populate the datapath[0] location if not already done
 populate_data = True
 
-# automatically update measures data if not current (rundata must be user-writable)
+# automatically update measures data if not current (measurespath must be user-writable)
 measures_update = True
 
 # log file path/name

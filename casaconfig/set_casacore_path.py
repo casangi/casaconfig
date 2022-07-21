@@ -30,6 +30,7 @@ def set_casacore_path(path=None):
     import pkg_resources
     import os
     import re
+    import sys
     
     if path is None: path = pkg_resources.resource_filename('casaconfig', 'data/')
     path = os.path.abspath(os.path.expanduser(path))
@@ -42,7 +43,7 @@ def set_casacore_path(path=None):
     # set/replace the path to the geodetic folder
     if os.path.exists(casarc):
         with open(casarc, 'r') as fid:
-            print('found existing .casarc...')
+            print('found existing .casarc...', file = sys.stderr )
             oldtxt = fid.read()
         if 'measures.directory' in oldtxt:
             rctext = re.sub('measures.directory: .+?\n', '%s'%rctext, oldtxt, flags=re.DOTALL)
