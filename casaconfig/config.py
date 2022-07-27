@@ -87,10 +87,20 @@ with _io.all_redirected(to=__os.devnull) if _module_execution else _io.no_redire
                         _config_defaults._globals( )[__v] = __orig[__v]
                     __loaded_config_files.append( __pkg.get_filename( ) )
 
+# the names of config values that are path that need to be expanded here
+__path_names = ["cachedir","datapath","measurespath","logfile","startupfile","telemetry_log_directory"]
 
 for __v in __defaults:
     globals()[__v] = getattr(_config_defaults,__v,None)
-
+    if (__v in __path_names) :
+        # expand ~ or ~user constructs and make sure they are absolute paths
+        if (type(globals()[__v]) is list) :
+            vlist = list(map(__os.path.expanduser, globals()[__v]))
+            vlist = list(map(__os.path.abspath,vlist))
+            globals()[__v] = vlist
+        else:
+            globals()[__v] = __os.path.abspath(__os.path.expanduser(globals()[__v]))
+                                             
 def load_success( ):
     return __loaded_config_files
 def load_failure( ):

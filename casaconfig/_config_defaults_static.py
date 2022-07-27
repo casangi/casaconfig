@@ -4,8 +4,8 @@ datapath = [ ]
 # location of geodetic and ephemera data
 measurespath = "~/.casa/measures"
 
-# location of the cachedir (perhaps prefilled via command line parameters)
-globals()['cachedir'] = globals( ).get( 'cachedir', '~/.casa' )
+# location of the cachedir
+cachedir = '~/.casa'
 
 # location of the optional user's startup.py
 startupfile = '~/.casa/startup.py'
@@ -47,7 +47,7 @@ iplog = False
 telemetry_enabled = True
 
 # location to place telemetry data prior to reporting
-telemetry_log_directory = _os.path.expanduser(f'{cachedir}/telemetry')
+telemetry_log_directory = '~/.casa/telemetry'
 
 # maximum size of telemetry recording
 telemetry_log_limit = 20480

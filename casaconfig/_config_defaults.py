@@ -46,9 +46,6 @@ __flags,__args = __parser.parse_known_args(_sys.argv)
 def _globals( ):
     return globals()
 
-if __flags.cachedir is not None:
-    cachedir = __flags.cachedir
-
 exec( open(_os.path.join(_os.path.dirname(__file__),'_config_defaults_static.py')).read( ), globals( ) )
 
 # list of paths where CASA should search for data subdirectories

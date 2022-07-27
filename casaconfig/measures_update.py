@@ -60,6 +60,12 @@ def measures_update(path=None, version=None, force=False, logger=None):
             if logger is not None: logger.post('casaconfig current measures detected in %s, using version %s' % (path, current), 'INFO')
             return
 
+    # path must be writable with execute bit set
+    if (not os.access(path, os.W_OK | os.X_OK)) :
+        print('No permission to write to the measures path, cannot update : %s' % path, file = sys.stderr )
+        if logger is not None: logger.post('No permission to write to the measures path, cannot update : %s' % path, 'ERROR')
+        return
+
     print('casaconfig connecting to ftp.astron.nl ...', file = sys.stderr )
     if logger is not None: logger.post('casconfig connecting to ftp.astron.nl ...', 'INFO')
 
