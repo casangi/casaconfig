@@ -20,6 +20,11 @@ def set_casacore_path(path=None):
     """
     Set the path in .casarc to the desired data directory
 
+    The "measures.directory" in the .casarc file is not used by any part of CASA. This function is
+    provided as a convenience for casacore users (e.g. python-casacore) so that the path to
+    the casacore data directory can be found by casacore users. It sets the value of that
+    parameter to the casacore data location, replacing any previously set value.
+
     Parameters
        - path (string=None) - path to the desired data directory. Default None uses the included data directory from this package
 
