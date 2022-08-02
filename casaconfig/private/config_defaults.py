@@ -28,7 +28,7 @@
 '''
 Default values for the configuration variables for all CASA python packages.
 DO NOT ADD new configuration variables here. Instead, add them in
-_config_defaults_static.py (found in the same directory as this file).
+config_defaults_static.py (found in the same directory as this file).
 '''
 import os as _os
 import sys as _sys
@@ -46,7 +46,7 @@ __flags,__args = __parser.parse_known_args(_sys.argv)
 def _globals( ):
     return globals()
 
-exec( open(_os.path.join(_os.path.dirname(__file__),'_config_defaults_static.py')).read( ), globals( ) )
+exec( open(_os.path.join(_os.path.dirname(__file__),'config_defaults_static.py')).read( ), globals( ) )
 
 # list of paths where CASA should search for data subdirectories
 _casaconfig_loader = _pkgutil.get_loader('casaconfig')

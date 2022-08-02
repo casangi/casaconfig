@@ -15,7 +15,6 @@ setup(
     url='https://github.com/casangi/casadata',
     license='Apache-2.0',
     packages=find_packages(),
-    entry_points={'console_scripts': ['write_default_config = casaconfig.write_default_config:main']},
     package_data={'casaconfig': ['__data__/*']},
     include_package_data=True,
     install_requires=['xarray>=0.16.2',

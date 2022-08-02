@@ -28,15 +28,15 @@
 '''
 Configuration state for all CASA python packages.
 DO NOT ADD new configuration variables here. Instead, add them in
-_config_defaults_static.py (found in the same directory as this file).
+private/config_defaults_static.py.
 '''
-from . import _config_defaults
+from .private import config_defaults as _config_defaults
 import traceback as __traceback
 import sys as __sys
 import os as __os
 import pkgutil as __pkgutil
-from . import _io_redirect as _io
-from .get_argparser import get_argparser as __get_argparser
+from .private import io_redirect as _io
+from .private.get_argparser import get_argparser as __get_argparser
 
 ## list of config variables
 __defaults = [ x for x in dir(_config_defaults) if not x.startswith('_') ]
