@@ -15,24 +15,32 @@
 this module will be included in the api
 """
 
-def measures_update(path=None, version=None, force=False, logger=None):
+def measures_update(path=None, version=None, force=False, logger=None, extract_observatories=False):
     """
     Retrieve IERS data used for measures calculations from ASTRON FTP server
     
     Original data source is here: https://www.iers.org/IERS/EN/DataProducts/data.html
+
+    By default, the Observatories table is not extracted from the ASTRON tarfile. CASA provides an Observatories
+    file with the other data products (which can be retried using the pull_data function) and that Observatories table
+    is recommended for CASA users. casaconfig module users who wish to use the ASTRON provided Observatories table
+    can set the extract_observatories parameter to True to extract that from the tarball. 
     
     Parameters
        - path (str=None) - Folder path to place updated measures data. Default None places it in package installation directory
        - version (str=None) - Version of measures data to retrieve (usually in the form of yyyymmdd-160001.ztar, see measures_available()). Default None retrieves the latest
        - force (bool=False) - If True, always re-download the measures data. Default False will not download measures data if already updated today unless version parameter is specified and different from what was last downloaded.
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
+       - extract_observatories (bool=False) - If True, also extract the Observatories table. Default do not extract the Observatories table.
         
     Returns
        None
     
     """
     from ftplib import FTP
+    import tarfile
     import os
+    import re
     from datetime import datetime
     import pkg_resources
     import sys
@@ -85,10 +93,25 @@ def measures_update(path=None, version=None, force=False, logger=None):
         print('casaconfig downloading %s from ASTRON server to %s ...' % (target, path), file = sys.stderr )
         if logger is not None: logger.post('casaconfig downloading %s from ASTRON server to %s ...' % (target, path), 'INFO')
         ftp.retrbinary('RETR ' + target, fid.write)
+
+    ftp.close()
     
-    os.system("tar -zxf %s -C %s" % (os.path.join(path,'measures.ztar'), path))
+    # extract from the fetched tarfile
+    with tarfile.open(os.path.join(path,'measures.ztar'),mode='r:gz') as ztar:
+        # the list of members to extract
+        x_list = []
+        for m in ztar.getmembers() :
+            # always exclude *.old names in geodetic and usually exclude Observatories
+            do_skip = re.search('geodetic',m.name) and re.search('.old',m.name)
+            if not extract_observatories:
+                do_skip = do_skip or re.search('Observatories',m.name)
+            if not do_skip:
+                x_list.append(m)
+
+        ztar.extractall(path=path,members=x_list)
+        ztar.close()
+
     os.system("rm %s" % os.path.join(path, 'measures.ztar'))
-    os.system("rm -fr %s/*.old" % os.path.join(path, 'geodetic'))
     with open(os.path.join(path,'geodetic/readme.txt'), 'w') as fid:
        fid.write("# measures data populated by casaconfig\nversion : %s\ndate : %s" % (target, datetime.today().strftime('%Y-%m-%d')))
 
