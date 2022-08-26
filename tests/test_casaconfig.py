@@ -177,7 +177,7 @@ class casaconfig_test(unittest.TestCase):
         self.assertTrue(ref, "AssertionError seen in output : expected utils().measurespath() was not seen")
 
     def test_update_populate(self):
-        '''Test Automatic Updates to datapath'''
+        '''Test Automatic Updates to measurespath'''
 
         # force a download by going back 2 days since the loaded version may still be yesterday (today may not yet be available)
         today = date.today()
@@ -194,7 +194,6 @@ class casaconfig_test(unittest.TestCase):
         f.write("# Test Config File\n")
         f.write('datapath = ["{}"]\n'.format(testmeasurespath))
         f.write('measurespath = "{}"\n'.format(testmeasurespath))
-        f.write('populate_data = True\n')
         f.write('measures_update = True\n')
         f.close()
 
