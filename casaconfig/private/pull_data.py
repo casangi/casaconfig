@@ -20,6 +20,22 @@ def pull_data(path=None, branch=None, force=False, logger=None):
     """
     Pull down the package data contents from github to the specified directory
 
+    The package installation directory (returned by get_data_dir()) is used when 
+    path is not specified. Note that that location need not be the same as 
+    datapath. 
+
+    The measures tables included in the package data at github will typically 
+    not be the most recent versions. If measurespath is the same as path then 
+    measures_update() should be used after pull_data to get the most recent 
+    measures tables. If measurespath is a different directory then the measures
+    table found there are always used even if measures tables are also found
+    at other locations in datapath.
+
+    Some of the tables installed by pull_data are only read when casatools
+    starts. Use of pull_data (or measures_update) should typically be followed
+    by a restart so that any changes are seen by the tools and tasks that
+    use this data.
+
     Parameters
        - path (str=None) - Folder path to place casadata contents. Default None places it in package installation directory
        - branch (str=None) - casadata repo branch to retrieve data from. Use 'master' for latest casadata trunk. Default None attempts

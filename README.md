@@ -59,7 +59,7 @@ measurespath = os.path.expanduser("~/.casa/measures")
 measures_update = True
 
 # log file path/name
-logfile='casalog_%s.log' % time.strftime("%Y-%m-%d", time.localtime())
+logfile='casalog-%s.log' % time.strftime("%Y-%m-%d", time.localtime())
 
 # do not create a log file when True, If True, then any logfile value is ignored and there is no log file
 nologfile = False
@@ -84,8 +84,11 @@ agg = False
 # when pipeline is True then agg will be assumed to be true even if agg is set to False here or on the command line
 pipeline = False
 
-# create and use an IPython log in the current directory if True
+# create and use an IPython log using the iplogfile path 
 iplog = True
+
+# IPython log path/name used when iplog is True
+iplogfile = 'ipython-%s.log' % time.strftime("%Y-%m-%d", time.localtime())
 
 # allow anonymous usage reporting
 telemetry_enabled = True

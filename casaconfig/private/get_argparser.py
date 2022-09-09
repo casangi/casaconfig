@@ -21,8 +21,10 @@ def get_argparser(add_help=False):
 
     ## look for arguments affecting the configuration
     parser = __argparse.ArgumentParser(add_help=add_help)
-    parser.add_argument( "--noconfig", dest='noconfig', action='store_const', const=True, default=False,
-                         help='do not load user configuration file' )
     parser.add_argument( "--configfile",dest='configfile', default='~/.casa/config.py',
                          help='location of the user configuration file')
+    parser.add_argument( "--noconfig", dest='noconfig', action='store_const', const=True, default=False,
+                         help='do not load user configuration file' )
+    parser.add_argument( "--nositeconfig", dest='nositeconfig', action='store_const', const=True, default=False,
+                         help='do not load site configuration file')
     return parser

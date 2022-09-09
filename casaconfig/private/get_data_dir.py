@@ -18,7 +18,11 @@ this module will be included in the api
 
 def get_data_dir():
     """
-    Return the path to the included data folder inside this package
+    Return the path to the included data folder inside the casaconfig package
+
+    This is a convenience function that can be used to find the included data 
+    directory inside the casaconfig package. That location need not be the same 
+    as the datapath or measurespath.
 
     Parameters
        None

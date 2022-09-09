@@ -45,9 +45,10 @@ __defaults = [ x for x in dir(_config_defaults) if not x.startswith('_') ]
 __parser = __get_argparser()
 __flags,__args = __parser.parse_known_args(__sys.argv)
 __user_config = [ ] if __flags.noconfig else [ __flags.configfile ]
+__site_config = [ ] if __flags.nositeconfig else [ 'casaconfigsite' ]
 
 ## files to be evaluated/loaded
-__config_files = [ 'casaconfigsite', *__user_config ]
+__config_files = [ * __site_config , *__user_config ]
 __loaded_config_files = [ __file__ ]
 __errors_encountered = { }
 
@@ -88,7 +89,7 @@ with _io.all_redirected(to=__os.devnull) if _module_execution else _io.no_redire
                     __loaded_config_files.append( __pkg.get_filename( ) )
 
 # the names of config values that are path that need to be expanded here
-__path_names = ["cachedir","datapath","measurespath","logfile","startupfile","telemetry_log_directory"]
+__path_names = ["cachedir","datapath","measurespath","logfile","iplogfile","startupfile","telemetry_log_directory"]
 
 for __v in __defaults:
     globals()[__v] = getattr(_config_defaults,__v,None)

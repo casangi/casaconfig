@@ -118,25 +118,6 @@ class casaconfig_test(unittest.TestCase):
 
         self.assertTrue(dir1 and dir2)
 
-    def test_casaconfig_measures_update_observatories(self):
-        '''Test that measures_update does not extract Observatories unless extract_observatories is True'''
-        
-        # just in case this test runs at exactly the wrong time and a new version appears between invocations of measures_update
-        latest = casaconfig.measures_available()[-1]
-        self.assertTrue(len(latest) > 0)
-
-        testmeas_dir = os.path.expanduser(os.path.join(os.getcwd(), 'testmeasures'))
-        testmeas_obs_dir = os.path.expanduser(os.path.join(os.getcwd(), 'testmeasures_with_obs'))
-
-        casaconfig.measures_update(testmeas_dir, latest, force=True)
-        casaconfig.measures_update(testmeas_obs_dir, latest, force=True, extract_observatories=True)
-
-        # geodetic/Observatories should be in the second one and not in the first one
-        dir1 = os.path.isdir(os.path.join(testmeas_dir,'geodetic','Observatories'))
-        dir2 = os.path.isdir(os.path.join(testmeas_obs_dir,'geodetic','Observatories'))
-        self.assertTrue((not dir1) and dir2)
-
-
     def test_read_measurespath_from_user_config(self):
         '''Test casaconfig downloads specific data to location and casatools reads that data location'''
 

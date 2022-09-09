@@ -37,8 +37,11 @@ agg = False
 # attempt to load the pipeline modules and set other options appropriate for pipeline use if True
 pipeline = False
 
-# create and use an IPython log in the current directory if True
+# create and use an IPython log using the iplogfile path
 iplog = False
+
+# the IPython log file path name to be used when iplog is True
+iplogfile='ipython-%s.log' % _time.strftime("%Y%m%d-%H%M%S", _time.gmtime())
 
 # allow anonymous usage reporting
 telemetry_enabled = True
