@@ -6,7 +6,7 @@ with open('README.md', "r") as fid:   #encoding='utf-8'
 
 setup(
     name='casaconfig',
-    version='0.0.49',
+    version='0.0.50,
     description='CASA Operational Configuration Package',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -20,5 +20,6 @@ setup(
     install_requires=['xarray>=0.16.2',
                       'numpy>=1.18.4',
                       'GitPython>=3.1.18',
-                      'importlib_metadata>=4.8.1']
+                      'importlib_metadata>=4.8.1',
+                      'certifi>=2023.5.7']
 )
