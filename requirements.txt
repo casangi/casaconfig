@@ -1,5 +1,5 @@
 xarray>=0.16.2
 numpy>=1.18.4
-GitPython==3.1.18
+GitPython==3.1.30
 importlib_metadata>=4.8.1
 certifi>=2023.5.7
