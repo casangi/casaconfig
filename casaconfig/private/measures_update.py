@@ -15,13 +15,13 @@
 this module will be included in the api
 """
 
-def measures_update(path=None, version=None, force=False, logger=None):
+def measures_update(path, auto_update_rules=False, version=None, force=False, logger=None):
     """
     Retrieve IERS data used for measures calculations from ASTRON FTP server
     
     Original data source is here: https://www.iers.org/IERS/EN/DataProducts/data.html
 
-    CASA maintains a separate Observatory table which is used my measures_update instead 
+    CASA maintains a separate Observatory table which is used by measures_update instead 
     of the version that accompanies the ASTRON measures tables.
 
     A text file (readme.txt in the geodetic directory in path) records the version string
@@ -34,24 +34,24 @@ def measures_update(path=None, version=None, force=False, logger=None):
     is today, then this function does nothing unless force is True even if there is a more
     recent version available from the ASTRON FTP server.
 
-    Automatic updating (when the measures_update config value is True) uses this
+    Automatic updating (when the measures_auto_update config value is True) uses this
     function as the casatools module is starting so that the updated measures are in
     place before any tool needs to use them. 
 
     Using measures_update after casatools has started should always be followed by exiting 
     and restarting casa (or the casatools module if modular casa components are being used).
 
-    A file lock is used to prevent more that one measures_update from updating
-    the measures files at the same time. When locked, the lock file (measures_update.lock 
+    A file lock is used to prevent more that one measures_update and data_update from updating
+    the measures files in path at the same time. When locked, the lock file (data_update.lock 
     in path) will contain information about the process that has the lock. When a measures_update
     gets the lock it will check the readme.txt file in the geodetic directory in path
-    to make sure that an update is still necessary (if force is True and update always happens).
+    to make sure that an update is still necessary (if force is True an update always happens).
 
     Care should be used when using measures_update outside of the normal automatic
     update that other casa sessions are not using the same measures at the same time,
     especially if they may also be starting at that time. If a specific version is
     requested or force is True there is a risk that the measures may be updated while
-    one of th ose other sessions are trying to load the same measures data, leading to
+    one of those other sessions are trying to load the same measures data, leading to
     unpredictable results. The lock file will prevent simulateous updates from
     happening but if each simultanous update eventually updates the same measures
     location (because force is True or the updates are requesting different versions)
@@ -59,10 +59,20 @@ def measures_update(path=None, version=None, force=False, logger=None):
     unpredictable. Avoid multiple, simultanous updates outside of the automatic
     update process.
 
+    **Note:** measures_update requires that the expected readme.txt file already exists in
+    the geodetic directory at path. If that file does not exist or can not be interpreted as
+    expected then measures_update will return without updating any data.
+
+    **Note:** if auto_update_rules is True the user must own path (in addition to having 
+    read and write permissions there). The version must then also be None and the force option 
+    must be False.
+
+
     Parameters
-       - path (str=None) - Folder path to place updated measures data. Default None places it in package installation directory (the value returned by get_data_dir),
-       - version (str=None) - Version of measures data to retrieve (usually in the form of yyyymmdd-160001.ztar, see measures_available()). Default None retrieves the latest
-       - force (bool=False) - If True, always re-download the measures data. Default False will not download measures data if already updated today unless version parameter is specified and different from what was last downloaded.
+       - path (str) - Folder path to place updated measures data. Must contain a valid geodetic/readme.txt
+       - auto_update_rules (bool=False) - If True then the user must be the owner of path, version must be None, and force must be False.
+       - version (str=None) - Version of measures data to retrieve (usually in the form of yyyymmdd-160001.ztar, see measures_available()). Default None retrieves the latest.
+       - force (bool=False) - If True, always re-download the measures data. Default False will not download measures data if already updated today unless the version parameter is specified and different from what was last downloaded.
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
         
     Returns
@@ -82,7 +92,8 @@ def measures_update(path=None, version=None, force=False, logger=None):
     import certifi
     import fcntl
 
-    if path is None: path = pkg_resources.resource_filename('casaconfig', '__data__/')
+    print("Not fully implemented, some features do not yet behave as documented")
+    
     path = os.path.expanduser(path)
     if not os.path.exists(path): os.mkdir(path)
     current = None

@@ -1,4 +1,4 @@
-# Copyright 2020 AUI, Inc. Washington DC, USA
+# Copyright 2023 AUI, Inc. Washington DC, USA
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -16,23 +16,24 @@ this module will be included in the api
 """
 
 
-def get_data_dir():
+def data_available():
     """
-    Return the path to the included data folder inside the casaconfig package
+    List available casarundata versions on CASA server
 
-    This is a convenience function that can be used to find the included data 
-    directory inside the casaconfig package. That location need not be the same 
-    as the datapath or measurespath.
+    This returns a list of the casarundata versions available on the CASA
+    download server. The version parameter of data_update must be one
+    of the values in that list if set (otherwise the most recent version
+    in this list is used).
 
     Parameters
        None
-
+    
     Returns
-       string - absolute path to included data directory
+       list - version names returned as list of strings
 
     """
-    import pkg_resources
 
-    datapath = pkg_resources.resource_filename('casaconfig', '__data__/')
+    print("Not yet implemented, nothing to return")
+    return []
 
-    return datapath
+    
