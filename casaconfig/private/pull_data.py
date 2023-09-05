@@ -17,7 +17,7 @@ this module will be included in the api
 
 def pull_data(path, version=None, force=False, logger=None):
     """
-    Pull down the package data contents from the CASA host to the specified directory
+    Pull the package data contents from the CASA host and install it in path.
 
     The path must be specified and must either contain a previously installed 
     version of the package data or it must not exist or be empty. 
@@ -27,15 +27,15 @@ def pull_data(path, version=None, force=False, logger=None):
     A text file (readme.txt at path) records the version string, the date
     when that version was installed in path, and the files installed into path.
     This file is used to determine if the contents in path are a previously installed 
-    version. 
+    version.
 
     If the version to be pulled matches the version in the readme.txt file then this 
-    function does nothing unless force is true. No error messages will result in the
+    function does nothing unless force is true. No error messages will result when the
     version already matches what was previously installed (no installation is then
     necessary unless force is True).
 
     The measures tables included with the package data will typically 
-    not be the most recent versions. To get the most recent measures data, measures_update
+    not be the most recent version. To get the most recent measures data, measures_update
     should be used after pull_data.
 
     If path contains a previously installed version then all of the files listed in 
@@ -46,7 +46,14 @@ def pull_data(path, version=None, force=False, logger=None):
     lock file (data_update.lock in path) will contain information about the process that
     has the lock. When pull_data gets the lock it will check the readme.txt file in path
     to make sure that a copy of the data should be pulled (the version doesn't match what
-    was requested). If force is True an update always happens. 
+    was requested). If force is True an update always happens. If the lock file is not
+    empty then a previous update of path (pull_data, data_update, or measures_update)
+    did not exit as expected and the contents of path are suspect. In that case, pull_data
+    will report that as an error and nothing will be updated. The lock file can be checked
+    to see the details of when that file was locked. The lock file can be removed and
+    pull_data can be then be used to install the desired version. Unless the details of the
+    update that failed to clear the lock file are known it may be safest to remove path
+    completely or use a different path and run pull_data to install the desired version.
 
     Some of the tables installed by pull_data are only read when casatools starts. Use of 
     pull_data should typically be followed by a restart so that any changes are seen by the 
