@@ -25,6 +25,9 @@ def data_available():
     of the values in that list if set (otherwise the most recent version
     in this list is used).
 
+    The version is the filename of the tarball and look 
+    like "casarundata.x.y.z.tar.gz"
+
     Parameters
        None
     
@@ -33,7 +36,42 @@ def data_available():
 
     """
 
-    print("Not yet implemented, nothing to return")
+    import html.parser
+    import urllib.request
+    import ssl
+    import certifi
+    
+    class LinkParser(html.parser.HTMLParser):
+        def reset(self):
+            super().reset()
+            self.rundataList = []
+
+        def handle_starttag(self, tag, attrs):
+            if tag == 'a':
+                for (name, value) in attrs:
+                    # only care if this is an href and the value starts with
+                    # casarundata and ends with tar.gz
+                    if name == 'href' and (value[:11] == 'casarundata' and value[-6:] == 'tar.gz'):
+                        # only add it to the list if it's not already there
+                        if (value not in self.rundataList):
+                            self.rundataList.append(value)
+
+    try:
+        context = ssl.create_default_context(cafile=certifi.where())
+        with urllib.request.urlopen('https://casa.nrao.edu/download/casaconfig/data/', context=context, timeout=400) as urlstream:
+            parser = LinkParser()
+            encoding = urlstream.headers.get_content_charset() or 'UTF-8'
+            for line in urlstream:
+                parser.feed(line.decode(encoding))
+
+        # return the sorted list, earliest versions are first, newest is last
+        return sorted(parser.rundataList)
+    
+    except Exception as exc:
+        print("ERROR! : unexpected exception while getting list of available casarundata versions")
+        print("ERROR! : %s" % exc)
+
+    # nothing to return if it got here, must have been an exception
     return []
 
     

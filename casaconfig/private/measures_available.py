@@ -18,10 +18,10 @@ this module will be included in the api
 
 def measures_available():
     """
-    List available measures versions on ASTRON FTP server
+    List available measures versions on ASTRON server
 
     This returns a list of the measures files available on the ASTRON
-    FTP server. The version parameter of measures_update must be one
+    server. The version parameter of measures_update must be one
     of the values in that list if set (otherwise the most recent version
     in this list is used).
 

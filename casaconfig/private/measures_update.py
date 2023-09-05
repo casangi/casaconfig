@@ -17,7 +17,7 @@ this module will be included in the api
 
 def measures_update(path, auto_update_rules=False, version=None, force=False, logger=None):
     """
-    Retrieve IERS data used for measures calculations from ASTRON FTP server
+    Retrieve IERS data used for measures calculations from ASTRON server
     
     Original data source is here: https://www.iers.org/IERS/EN/DataProducts/data.html
 
@@ -32,7 +32,7 @@ def measures_update(path, auto_update_rules=False, version=None, force=False, lo
 
     If a specific version is not requested (the default) and the date in that text file
     is today, then this function does nothing unless force is True even if there is a more
-    recent version available from the ASTRON FTP server.
+    recent version available from the ASTRON server.
 
     Automatic updating (when the measures_auto_update config value is True) uses this
     function as the casatools module is starting so that the updated measures are in
@@ -143,7 +143,7 @@ def measures_update(path, auto_update_rules=False, version=None, force=False, lo
         # this should already be empty, but just in case
         lock_fd.seek(0)
         lock_fd.truncate(0)
-        lock_fd.write("locked using measures_update by %s on %s : pid = %s at %s" % (os.getlogin(),os.uname().nodename, os.getpid(), datetime.today().strftime('%Y-%m-%d:%H:%M:%S')))
+        lock_fd.write("locked using measures_update by %s on %s : pid = %s at %s" % (os.getlogin(), os.uname().nodename, os.getpid(), datetime.today().strftime('%Y-%m-%d:%H:%M:%S')))
         lock_fd.flush()
 
         do_update = force
