@@ -26,7 +26,7 @@ def pull_data(path, version=None, force=False, logger=None):
 
     A text file (readme.txt at path) records the version string, the date
     when that version was installed in path, and the files installed into path.
-    This file is used to determine if the contents in path are a previously installed 
+    This file is used to determine if the contents are a previously installed 
     version.
 
     If the version to be pulled matches the version in the readme.txt file then this 
@@ -34,7 +34,7 @@ def pull_data(path, version=None, force=False, logger=None):
     version already matches what was previously installed (no installation is then
     necessary unless force is True).
 
-    The measures tables included with the package data will typically 
+    The measures tables included in the package data will typically 
     not be the most recent version. To get the most recent measures data, measures_update
     should be used after pull_data.
 
@@ -43,17 +43,17 @@ def pull_data(path, version=None, force=False, logger=None):
 
     A file lock is used to prevent more than one data update (pull_data, measures_update
     or data_update) from updating any files in path at the same time. When locked, the
-    lock file (data_update.lock in path) will contain information about the process that
-    has the lock. When pull_data gets the lock it will check the readme.txt file in path
+    lock file (data_update.lock in path) contains information about the process that
+    has the lock. When pull_data gets the lock it checks the readme.txt file in path
     to make sure that a copy of the data should be pulled (the version doesn't match what
     was requested). If force is True an update always happens. If the lock file is not
     empty then a previous update of path (pull_data, data_update, or measures_update)
     did not exit as expected and the contents of path are suspect. In that case, pull_data
     will report that as an error and nothing will be updated. The lock file can be checked
     to see the details of when that file was locked. The lock file can be removed and
-    pull_data can be then be used to install the desired version. Unless the details of the
-    update that failed to clear the lock file are known it may be safest to remove path
-    completely or use a different path and run pull_data to install the desired version.
+    pull_data can be then be used to install the desired version. It may be safest in that case
+    to remove path completely or use a different path and run pull_data to install 
+    a fresh copy of the desired version.
 
     Some of the tables installed by pull_data are only read when casatools starts. Use of 
     pull_data should typically be followed by a restart so that any changes are seen by the 
@@ -61,9 +61,9 @@ def pull_data(path, version=None, force=False, logger=None):
 
     Parameters
        - path (str) - Folder path to place casadata contents. It must be empty or not exist or contain a valid, previously installed version.
-       - version (str=None) - casadata version to retrieve data from. Default None gets the most recent version.
+       - version (str=None) - casadata version to retrieve. Default None gets the most recent version.
        - force (bool=False) - If True, re-download the data even when the requested version matches what is already installed. Default False will not download data if the installed version matches the requested version.
-       - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal.
+       - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Messages are always written to the terminal. Default None does not write any messages to a logger.
 
     Returns
        None
