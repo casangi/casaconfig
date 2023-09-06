@@ -21,11 +21,11 @@ def data_available():
     List available casarundata versions on CASA server
 
     This returns a list of the casarundata versions available on the CASA
-    download server. The version parameter of data_update must be one
+    server. The version parameter of data_update must be one
     of the values in that list if set (otherwise the most recent version
     in this list is used).
 
-    The version is the filename of the tarball and look 
+    A casarundata version is the filename of the tarball and look 
     like "casarundata.x.y.z.tar.gz"
 
     Parameters
