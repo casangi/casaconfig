@@ -2,16 +2,20 @@
 datapath = [ ]
 
 # location of geodetic and ephemera data
-measurespath = "~/.casa/measures"
+measurespath = "~/.casa/data"
 
-# location of the cachedir
-cachedir = '~/.casa'
+# automatically update measures data if not current (measurespath must be owned by the user)
+# when data_auto_update is True then measures_auto_update MUST also be True
+measures_auto_update = True
+
+# automatically update casarundata and measures data if not current (measurespath must be owned by the user)
+data_auto_update = True
 
 # location of the optional user's startup.py
 startupfile = '~/.casa/startup.py'
 
-# automatically update measures data if not current (measurespath must be user-writable)
-measures_update = True
+# location of the cachedir
+cachedir = '~/.casa'
 
 # log file path/name
 logfile='casa-%s.log' % _time.strftime("%Y%m%d-%H%M%S", _time.gmtime())

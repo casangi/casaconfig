@@ -41,7 +41,7 @@ def pull_data(path, version=None, force=False, logger=None):
     If path contains a previously installed version then all of the files listed in 
     the manifest part of the readme.txt file are first removed from path.
 
-    A file lock is used to prevent more than one data update (pull_data, measures_update
+    A file lock is used to prevent more than one data update (pull_data, measures_update,
     or data_update) from updating any files in path at the same time. When locked, the
     lock file (data_update.lock in path) contains information about the process that
     has the lock. When pull_data gets the lock it checks the readme.txt file in path
@@ -71,17 +71,11 @@ def pull_data(path, version=None, force=False, logger=None):
     """
 
     import os
-    import sys
-    from datetime import datetime
-    import ssl
-    import urllib.request
-    import certifi
-    import tarfile
-    import shutil
 
     from .data_available import data_available
     from .print_log_messages import print_log_messages
     from .get_data_lock import get_data_lock
+    from .do_pull_data import do_pull_data
 
     path = os.path.expanduser(path)
     readme_path = os.path.join(path, 'readme.txt')
@@ -89,7 +83,7 @@ def pull_data(path, version=None, force=False, logger=None):
     installed_files = []
     available_data = None
     currentVersion = None
-    currentData = None
+    currentDate = None
     
     # attempt a pull if path does not exist or is empty:
     do_pull = (not os.path.exists(path)) or (len(os.listdir(path))==0)
@@ -113,7 +107,7 @@ def pull_data(path, version=None, force=False, logger=None):
             if (len(installed_files) == 0):
                 # this shouldn't happen
                 print_log_messages('destination path is not empty and the readme.txt file found there did not contain the expected list of installed files', logger, True)
-                print_log_messages('choose a different path or emptyh this path and try again', logger, True)
+                print_log_messages('choose a different path or empty this path and try again', logger, True)
                 # no lock as been set yet, safe to simply return here
                 return
             
@@ -169,6 +163,7 @@ def pull_data(path, version=None, force=False, logger=None):
             # the readme file needs to be reread here
             # it's possible that another process had path locked and updated the readme file with new information
             try :
+                readme = None
                 with open(readme_path, 'r') as fid:
                     readme = fid.readlines()
                     currentVersion = readme[1].split(':')[-1].strip()
@@ -186,89 +181,16 @@ def pull_data(path, version=None, force=False, logger=None):
                         # this shoudn't happen, do not do a pull
                         do_pull = False
                         print_log_messages('destination path is not empty and the readme.txt file found there did not contain the expected list of installed files', logger, True)
-                        print_log_messages('This should not happen unless multiple sessions are trying to pull_data at the same time and one experienced problems are was done out of sequence', logger, True)
+                        print_log_messages('This should not happen unless multiple sessions are trying to pull_data at the same time and one experienced problems or was done out of sequence', logger, True)
                         print_log_messages('Check for other updates in process or choose a different path or clear out this path and try again', logger, True)                    
             except:
                 # this shouldn't happen, do not do a pull
                 do_pull = False
                 print_log_messages('Unexpected error reading readme.txt file during pull_data, can not safely pull the requested version', logger, True)
-                print_log_messages('This should not happen unless multiple sessions are trying to pull_data at the same time and one experienced problems are was done out of sequence', logger, True)
+                print_log_messages('This should not happen unless multiple sessions are trying to pull_data at the same time and one experienced problems or was done out of sequence', logger, True)
                 
         if do_pull:
-            if (len(installed_files) > 0):
-                # remove the previously installed files
-                # remove this readme file so it's not confusing if something goes wrong after this
-                os.remove(readme_path)
-                print_log_messages('Removing files using manifest from previous install of %s on %s' % (currentVersion, currentDate), logger)
-                for relpath in installed_files:
-                    filepath = os.path.join(path,relpath)
-                    # don't say anything if filepath isn't found, remove it if it is found
-                    if os.path.exists(filepath) and os.path.isfile(filepath):
-                        os.remove(filepath)
-                # remove any empty directories in path - this is recursive
-                def remove_empty_dirs(dirpath):
-                    # look at all of the files in dirpath, for dirs, go down that recursively
-                    # if there's nothing there after the dirs have all been handled, remove it
-                    files = os.listdir(dirpath)
-                    not_dirs = []
-                    for f in os.listdir(dirpath):
-                        fpath = os.path.join(dirpath, f)
-                        if os.path.isdir(fpath):
-                            remove_empty_dirs(fpath)
-                        else:
-                            not_dirs.append(f)
-                    if len(not_dirs) == 0:
-                        if len(os.listdir(dirpath)) == 0:
-                            os.rmdir(dirpath)
-                remove_empty_dirs(path)
-
-            # okay, safe to install the requested version
-            
-            dataURL = os.path.join('https://casa.nrao.edu/download/casaconfig/data',version)
-            context = ssl.create_default_context(cafile=certifi.where())
-            with urllib.request.urlopen(dataURL, context=context, timeout=400) as tstream, tarfile.open(fileobj=tstream, mode='r:gz') as tar :
-                l = int(tstream.headers.get('content-length', 0))
-                sizeString = "unknown size"
-                if (l>0): sizeString = ("%.0fM" % (l/(1024*1024)))
-                # use print directly to make use of the end argument
-                print('downloading casarundata contents to %s (%s) ... ' % (path,sizeString), file = sys.stdout, end="" )
-                sys.stdout.flush()
-                # also log it
-                if logger is not None: logger.post('downloading casarundata contents to %s ...' % path, 'INFO')
-                tar.extractall(path=path)
-                print("done", file=sys.stdout)
-                # the tarball has been extracted to path/version
-                # get the instaled files of files to be written to the readme file
-                versdir = os.path.join(path,version[:version.index('.tar')])
-                installed_files = []
-                wgen = os.walk(versdir)
-                for (dirpath, dirnames, filenames) in wgen:
-                    for f in filenames:
-                        installed_files.append(os.path.relpath(os.path.join(dirpath,f),versdir))
-                
-                # move everything in version up a level to path
-                for f in os.listdir(versdir):
-                    srcPath = os.path.join(versdir,f)
-                    if os.path.isdir(srcPath):
-                        # directories are first copied, then removed
-                        # existing directories are reused, existing files are overwritten
-                        # things in path that do not exist in srcPath are not changed
-                        shutil.copytree(srcPath,os.path.join(path,f),dirs_exist_ok=True)
-                        shutil.rmtree(srcPath)
-                    else:
-                        # assume it's a simple file, these can be moved directly, overwriting anything already there
-                        os.rename(srcPath,os.path.join(path,f))
-                        
-                # safe to remove versdir, it would be a surprise if it's not empty
-                os.rmdir(versdir)
-                # update the readme.txt file
-                with open(readme_path,'w') as fid:
-                    fid.write("# casarundata populated by casaconfig.pull_data\nversion : %s\ndate : %s" % (version, datetime.today().strftime('%Y-%m-%d')))
-                    fid.write("\n#\n# manifest")
-                    for f in installed_files:
-                        fid.write("\n%s" % f)
-
-            print_log_messages('casarundata installed %s at %s' % (version, path), logger)
+            do_pull_data(path, version, installed_files, logger)
                         
         # truncate the lock file
         lock_fd.truncate(0)
@@ -281,7 +203,7 @@ def pull_data(path, version=None, force=False, logger=None):
         traceback.print_exc()
 
     # if the lock file is not closed, do that now to release the lock
-    if lock_fd is not None and not(lock_fd.closed):
+    if lock_fd is not None and not lock_fd.closed:
         lock_fd.close()
         
     return

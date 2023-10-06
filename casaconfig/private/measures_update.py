@@ -92,9 +92,22 @@ def measures_update(path, auto_update_rules=False, version=None, force=False, lo
     import certifi
     import fcntl
 
-    print("Not fully implemented, some features do not yet behave as documented")
+    from .print_log_messages import print_log_messages
+    from .get_data_lock import get_data_lock
     
     path = os.path.expanduser(path)
+
+    if auto_update_rules:
+        if version is not None:
+            print_log_messages('auto_update_rules requires that version be None', logger, True)
+            return
+        if force:
+            print_log_messages('force must be False when auto_update_rules is True', logger, True)
+            return
+        if (not os.path.isdir(path)) or (os.stat(path).st_uid != os.getuid()):
+            print_log_messages('path must exist as a directory and it must be owned by the user when auto_update_rules is True', logger, True)
+            return
+    
     if not os.path.exists(path): os.mkdir(path)
     current = None
     updated = None
@@ -116,14 +129,12 @@ def measures_update(path, auto_update_rules=False, version=None, force=False, lo
     # don't re-download the same data
     if not force:
         if ((version is not None) and (version == current)) or ((version is None) and (updated == today_string)):
-            print('casaconfig current measures detected in %s, using version %s' % (path, current), file=sys.stdout)
-            if logger is not None: logger.post('casaconfig current measures detected in %s, using version %s' % (path, current), 'INFO')
+            print_log_messages('measures_update current measures detected in %s, using version %s' % (path, current), logger)
             return
 
     # path must be writable with execute bit set
     if (not os.access(path, os.W_OK | os.X_OK)) :
-        print('No permission to write to the measures path, cannot update : %s' % path, file=sys.stdout)
-        if logger is not None: logger.post('No permission to write to the measures path, cannot update : %s' % path, 'ERROR')
+        print_log_messages('No permission to write to the measures path, cannot update : %s' % path, logger, True)
         return
 
     # an update needs to happen
@@ -131,20 +142,16 @@ def measures_update(path, auto_update_rules=False, version=None, force=False, lo
     # lock the measures_update.lock file
     lock_fd = None
     try:
-        print('casaconfig measures need to be updated, acquiring the lock ... ',file=sys.stdout)
-        lock_path = os.path.join(path,'measures_update.lock')
+        print_log_messages('measures_update measures need to be updated, acquiring the lock ... ', logger)
 
-        # open and lock the lock file - don't truncate it here if it already exists, wait until it's locked
-        mode = 'r+' if os.path.exists(lock_path) else 'w'
-        lock_fd = open(lock_path, mode)
-        fcntl.lockf(lock_fd,fcntl.LOCK_EX)
-        
-        # truncate and update the lock information
-        # this should already be empty, but just in case
-        lock_fd.seek(0)
-        lock_fd.truncate(0)
-        lock_fd.write("locked using measures_update by %s on %s : pid = %s at %s" % (os.getlogin(), os.uname().nodename, os.getpid(), datetime.today().strftime('%Y-%m-%d:%H:%M:%S')))
-        lock_fd.flush()
+        lock_fd = get_data_lock(path, 'measures_update')
+        # if lock_fd is None it means the lock file was not empty - because we know that path exists at this point
+        if lock_fd is None:
+            print_log_messages('The lock file at %s is not empty.' % path, logger, True)
+            print_log_messages('A previous attempt to update path may have failed or exited prematurely.', logger, True)
+            print_log_messages('Remove the lock file and set force to True with the desired version (default to most recent).', logger, True)
+            print_log_messages('It may be best to completely repopulate path using pull_data and measures_update.', logger, True)
+            return
 
         do_update = force
 
@@ -163,19 +170,16 @@ def measures_update(path, auto_update_rules=False, version=None, force=False, lo
 
             if ((version is not None) and (version == current)) or ((version is None) and (updated == today_string)):
                 # no update will be done, version is as requested or it's already been updated today
-                print('casaconfig current measures detected in %s, using version %s' % (path, current), file=sys.stdout)
-                if logger is not None: logger.post('casaconfig current measures detected in %s, using version %s' % (path, current), 'INFO')
+                print_log_messages('measures_update current measures detected in %s, using version %s' % (path, current), logger)
             else:
                 # an update is needed
                 do_update = True
 
         if do_update:
             if force:
-                print('casaconfig a measures update has been requested by the force argument', file=sys.stdout)
-                if logger is not None: logger.post('casaconfig a measures update has been requested by the force argument', 'INFO')
+                print_log_messages('meaures_update a measures update has been requested by the force argument', logger)
 
-            print('casaconfig connecting to ftp.astron.nl ...', file=sys.stdout)
-            if logger is not None: logger.post('casconfig connecting to ftp.astron.nl ...', 'INFO')
+            print_log_messages('measures_update connecting to ftp.astron.nl ...', logger)
 
             ftp = FTP('ftp.astron.nl')
             rc = ftp.login()
@@ -185,10 +189,7 @@ def measures_update(path, auto_update_rules=False, version=None, force=False, lo
             # target filename to download
             target = files[-1] if version is None else version
             if target not in files:
-                if logger is not None: 
-                    logger.post('casaconfig cant find specified version %s' % target, 'ERROR')
-                else: 
-                    print('##### ERROR: cant find specified version %s #####' % target, file=sys.stdout)
+                print_log_messages('measures_update cant find specified version %s' % target, logger, True)
 
             else:
                 # there are files to extract, remove the readme.txt file in case this dies unexpectedly
@@ -196,8 +197,7 @@ def measures_update(path, auto_update_rules=False, version=None, force=False, lo
                     os.remove(readme_path)
     
                 with open(os.path.join(path,'measures.ztar'), 'wb') as fid:
-                    print('casaconfig downloading %s from ASTRON server to %s ...' % (target, path), file=sys.stdout)
-                    if logger is not None: logger.post('casaconfig downloading %s from ASTRON server to %s ...' % (target, path), 'INFO')
+                    print_log_messages('measures_update downloading %s from ASTRON server to %s ...' % (target, path), logger)
                     ftp.retrbinary('RETR ' + target, fid.write)
 
                     ftp.close()
@@ -217,8 +217,7 @@ def measures_update(path, auto_update_rules=False, version=None, force=False, lo
                 os.system("rm %s" % os.path.join(path, 'measures.ztar'))
 
                 # get the Observatories table from CASA
-                print('casaconfig obtaining the Observatories table from CASA', file=sys.stdout)
-                if logger is not None: logger.post('casconfig obtaining the Observatories table from CASA ...', 'INFO')
+                print_log_messages('measures_update obtaining the Observatories table from CASA', logger)
                 context = ssl.create_default_context(cafile=certifi.where())
                 tstream = urllib.request.urlopen('https://casa.nrao.edu/download/geodetic/observatories.tar.gz', context=context, timeout=400)
                 tar = tarfile.open(fileobj=tstream, mode="r:gz")
@@ -228,24 +227,21 @@ def measures_update(path, auto_update_rules=False, version=None, force=False, lo
                 with open(readme_path,'w') as fid:
                     fid.write("# measures data populated by casaconfig\nversion : %s\ndate : %s" % (target, datetime.today().strftime('%Y-%m-%d')))
 
-                print('casaconfig updated measures data at %s' % path, file=sys.stdout)
-                if logger is not None: logger.post('casaconfig updated measures data at %s' % path, 'INFO')
+                print_log_messages('measures_update updated measures data at %s' % path, logger)
             
             # closing out the do_update
 
         # closing out the try block
         # truncate the lock file
         lock_fd.truncate(0)
-
-        # close the lock file to release the lock
-        lock_fd.close()
         
     except Exception as exc:
-        print("ERROR! : Unexpected exception while updating measures at %s" % path, file=sys.stdout)
-        print("ERROR! : %s" % exc, file=sys.stdout)
-        # close the lock file if not closed to release the lock
-        # leave the contents as is to aid in debugging
-        if lock_fd is not None and not(lock_fd.closed):
-            lock_fd.close()
+        print_log_messages("ERROR! : Unexpected exception while updating measures at %s" % path, logger, True)
+        print_log_messages("ERROR! : %s" % exc, logger, True)
+        # leave the contents of the lock file as is to aid in debugging
+        
+    # if the lock file is not closed, do that now to release the lock
+    if lock_fd is not None and not lock_fd.closed:
+        lock_fd.close()
 
     return

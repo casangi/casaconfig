@@ -1,7 +1,6 @@
 import unittest
 import os, shutil, stat, sys, subprocess
 from datetime import date, timedelta
-import importlib
 import site
 sitepackages = site.getsitepackages()[0]
 

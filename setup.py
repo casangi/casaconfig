@@ -17,6 +17,5 @@ setup(
     packages=find_packages(),
     package_data={'casaconfig': ['__data__/*']},
     include_package_data=True,
-    install_requires=['importlib_metadata>=4.8.1',
-                      'certifi>=2023.5.7']
+    install_requires=['certifi>=2023.5.7']
 )
