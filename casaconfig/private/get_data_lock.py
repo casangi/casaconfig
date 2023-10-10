@@ -39,6 +39,7 @@ def get_data_lock(path, fn_name):
 
     import fcntl
     import os
+    import getpass
     from datetime import datetime
 
     if not os.path.exists(path): return None
@@ -61,24 +62,17 @@ def get_data_lock(path, fn_name):
 
     # write the lock information, the seek and truncate are probably not necessary
     try:
-        print("lock file fd obtained for %s" % lock_path)
         lock_fd.seek(0)
-        print("seek")
         lock_fd.truncate(0)
-        print("truncated")
-        print("writing lock information")
-        print("fn_name : %s" % fn_name)
-        print("os.getlogin() : %s" % os.getlogin())
-        print("os.uname().nodename : %s" % os.uname().nodename)
-        print("os.getpid() : %s" % os.getpid())
-        print("datetime.today : %s" % datetime.today().strftime('%Y-%m-%d:%H:%M:%S'))
-        lock_fd.write("locked using %s by %s on %s : pid = %s at %s" % (fn_name, os.getlogin(), os.uname().nodename, os.getpid(), datetime.today().strftime('%Y-%m-%d:%H:%M:%S')))
-        print("info written")
+        lock_fd.write("locked using %s by %s on %s : pid = %s at %s" % (fn_name, getpass.getuser(), os.uname().nodename, os.getpid(), datetime.today().strftime('%Y-%m-%d:%H:%M:%S')))
         lock_fd.flush()
-        print("lock_fd flushed")
     except:
+        print("Unexpected failure in writing lock information to lock file %s" % lock_path)
+        print("Called by function : %s" % fn_name)
         import traceback
         traceback.print_exc()
+        lock_fd.close()
+        return None
 
     return lock_fd
    
