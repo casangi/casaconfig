@@ -9,7 +9,7 @@ def get_config( expanded=False ):
        list[str] - list of configuration strings
     """
 
-    from .. import config as _config
+    from casaconfig import config as _config
     if expanded :
         valsObj = _config
     else:

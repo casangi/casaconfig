@@ -57,8 +57,8 @@ if _casaconfig_loader:
         measurespath = _f
     else:
         datapath = [ ]
-        measurespath = _os.path.expanduser("~/.casa/measures")
+        measurespath = _os.path.expanduser("~/.casa/data")
 else:
     datapath = [ ]
-    measurespath = _os.path.expanduser("~/.casa/measures")
+    measurespath = _os.path.expanduser("~/.casa/data")
 

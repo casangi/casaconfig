@@ -56,11 +56,11 @@ def pull_data(path, version=None, force=False, logger=None):
     a fresh copy of the desired version.
 
     Some of the tables installed by pull_data are only read when casatools starts. Use of 
-    pull_data should typically be followed by a restart so that any changes are seen by the 
-    tools and tasks that use this data.
+    pull_data after CASA has started should typically be followed by a restart so that 
+    any changes are seen by the tools and tasks that use this data.
 
     Parameters
-       - path (str) - Folder path to place casadata contents. It must be empty or not exist or contain a valid, previously installed version.
+       - path (str) - Folder path to place casarundata contents. It must be empty or not exist or contain a valid, previously installed version.
        - version (str=None) - casadata version to retrieve. Default None gets the most recent version.
        - force (bool=False) - If True, re-download the data even when the requested version matches what is already installed. Default False will not download data if the installed version matches the requested version.
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Messages are always written to the terminal. Default None does not write any messages to a logger.
