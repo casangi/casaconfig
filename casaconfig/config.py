@@ -38,6 +38,8 @@ import pkgutil as __pkgutil
 from .private import io_redirect as _io
 from .private.get_argparser import get_argparser as __get_argparser
 
+print("top of casaconfig/config.py")
+
 ## list of config variables
 __defaults = [ x for x in dir(_config_defaults) if not x.startswith('_') ]
 
