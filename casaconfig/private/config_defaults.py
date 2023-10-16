@@ -48,17 +48,3 @@ def _globals( ):
 
 exec( open(_os.path.join(_os.path.dirname(__file__),'config_defaults_static.py')).read( ), globals( ) )
 
-# list of paths where CASA should search for data subdirectories
-_casaconfig_loader = _pkgutil.get_loader('casaconfig')
-if _casaconfig_loader:
-    _f = _os.path.join(_os.path.dirname(_casaconfig_loader.path),'__data__')
-    if _os.path.exists(_os.path.join(_f,'geodetic')):
-        datapath = [ _f ]
-        measurespath = _f
-    else:
-        datapath = [ ]
-        measurespath = _os.path.expanduser("~/.casa/data")
-else:
-    datapath = [ ]
-    measurespath = _os.path.expanduser("~/.casa/data")
-

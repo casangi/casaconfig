@@ -12,10 +12,8 @@ setup(
     long_description_content_type="text/markdown",
     author='National Radio Astronomy Observatory',
     author_email='casa-feedback@nrao.edu',
-    url='https://github.com/casangi/casadata',
+    url='https://github.com/casangi/casaconfig',
     license='Apache-2.0',
     packages=find_packages(),
-    package_data={'casaconfig': ['__data__/*']},
-    include_package_data=True,
     install_requires=['certifi>=2023.5.7']
 )

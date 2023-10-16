@@ -38,7 +38,6 @@ import pkgutil as __pkgutil
 from .private import io_redirect as _io
 from .private.get_argparser import get_argparser as __get_argparser
 
-print("top of casaconfig/config.py")
 
 ## list of config variables
 __defaults = [ x for x in dir(_config_defaults) if not x.startswith('_') ]
@@ -89,6 +88,13 @@ with _io.all_redirected(to=__os.devnull) if _module_execution else _io.no_redire
                     for __v in __defaults:
                         _config_defaults._globals( )[__v] = __orig[__v]
                     __loaded_config_files.append( __pkg.get_filename( ) )
+
+# if datapath is empty here, set it to [measurespath]
+if len(_config_defaults.datapath) == 0:
+    # watch for measurespath = None, which likely means the casasiteconfig.py is in use and has not been set
+    # it's up to downstream acts to catch that and give some feedback, but don't use it here if it's None
+    if _config_defaults.measurespath is not None:
+        _config_defaults.datapath = [ _config_defaults.measurespath ]
 
 # the names of config values that are path that need to be expanded here
 __path_names = ["cachedir","datapath","measurespath","logfile","iplogfile","startupfile","telemetry_log_directory"]

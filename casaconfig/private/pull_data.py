@@ -15,12 +15,14 @@
 this module will be included in the api
 """
 
-def pull_data(path, version=None, force=False, logger=None):
+def pull_data(path=None, version=None, force=False, logger=None):
     """
     Pull the package data contents from the CASA host and install it in path.
 
-    The path must be specified and must either contain a previously installed 
-    version of the package data or it must not exist or be empty. 
+    The path must either contain a previously installed version of the package data 
+    or it must not exist or be empty.
+
+    If path is None then config.measurespath will be used.
 
     If version is None (the default) then the most recent version is pulled.
 
@@ -60,7 +62,7 @@ def pull_data(path, version=None, force=False, logger=None):
     any changes are seen by the tools and tasks that use this data.
 
     Parameters
-       - path (str) - Folder path to place casarundata contents. It must be empty or not exist or contain a valid, previously installed version.
+       - path (str) - Folder path to place casarundata contents. It must be empty or not exist or contain a valid, previously installed version. If not set then config.measurespath is used.
        - version (str=None) - casadata version to retrieve. Default None gets the most recent version.
        - force (bool=False) - If True, re-download the data even when the requested version matches what is already installed. Default False will not download data if the installed version matches the requested version.
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Messages are always written to the terminal. Default None does not write any messages to a logger.
@@ -76,6 +78,15 @@ def pull_data(path, version=None, force=False, logger=None):
     from .print_log_messages import print_log_messages
     from .get_data_lock import get_data_lock
     from .do_pull_data import do_pull_data
+
+    if path is None:
+        from .. import config as _config
+        path = _config.measurespath
+
+    if path is None:
+        # it's not being set in a config file, probably casasiteconfig.py is being use but has not been edited
+        print_log_messages('path is None and has not been set in config.measurespath (probably casasiteconfig.py). Provide a valid path and retry.', logger, True)
+        return
 
     path = os.path.expanduser(path)
     readme_path = os.path.join(path, 'readme.txt')

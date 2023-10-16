@@ -15,7 +15,7 @@
 this module will be included in the api
 """
 
-def measures_update(path, auto_update_rules=False, version=None, force=False, logger=None):
+def measures_update(path=None, auto_update_rules=False, version=None, force=False, logger=None):
     """
     Retrieve IERS data used for measures calculations from ASTRON server
     
@@ -26,6 +26,8 @@ def measures_update(path, auto_update_rules=False, version=None, force=False, lo
 
     A text file (readme.txt in the geodetic directory in path) records the version string
     and the date when that version was installed in path.
+
+    If path is None then config.measurespath will be used.
 
     If the version requested matches the one in that text file then this function does
     nothing unless force is True.
@@ -69,7 +71,7 @@ def measures_update(path, auto_update_rules=False, version=None, force=False, lo
 
 
     Parameters
-       - path (str) - Folder path to place updated measures data. Must contain a valid geodetic/readme.txt
+       - path (str) - Folder path to place updated measures data. Must contain a valid geodetic/readme.txt. If not set then config.measurespath is used.
        - auto_update_rules (bool=False) - If True then the user must be the owner of path, version must be None, and force must be False.
        - version (str=None) - Version of measures data to retrieve (usually in the form of yyyymmdd-160001.ztar, see measures_available()). Default None retrieves the latest.
        - force (bool=False) - If True, always re-download the measures data. Default False will not download measures data if already updated today unless the version parameter is specified and different from what was last downloaded.
@@ -95,6 +97,15 @@ def measures_update(path, auto_update_rules=False, version=None, force=False, lo
     from .print_log_messages import print_log_messages
     from .get_data_lock import get_data_lock
     
+    if path is None:
+        from .. import config as _config
+        path = _config.measurespath
+
+    if path is None:
+        # it's not being set in a config file, probably casasiteconfig.py is being use but has not been edited
+        print_log_messages('path is None and has not been set in config.measurespath (probably casasiteconfig.py). Provide a valid path and retry.', logger, True)
+        return
+
     path = os.path.expanduser(path)
 
     if auto_update_rules:

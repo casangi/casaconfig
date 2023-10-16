@@ -35,6 +35,12 @@ import casaconfig
 if flags.measurespath is None:
     flags.measurespath = config.measurespath
 
+# watch for measurespath of None, that likely means that casasiteconfig.py is in use and this has not been set. It can't be used then.
+if flags.measurespath is None:
+    print("measurespath has been set to None, likely in casasiteconfig.py.")
+    print("Either provide a measurespath on the casaconfig command line or edit casasiteconfig.py or other a user config.py to set measurespath to a location.")
+    sys.exit(1)
+
 # do any expanduser and abspath
 measurespath = os.path.abspath(os.path.expanduser(flags.measurespath))
 

@@ -41,7 +41,7 @@ def update_all(path=None, logger=None):
     so that any changes are seen by the tools and tasks that use this data.
 
     Parameters
-       - path (str=None) - Folder path to place casarundata contents. It must not exist, or be empty, or contain a valid, previously installed version. If it exists, it must be owned by the user. Default None used the value of measurespath set by importing config.py.
+       - path (str=None) - Folder path to place casarundata contents. It must not exist, or be empty, or contain a valid, previously installed version. If it exists, it must be owned by the user. Default None uses the value of measurespath set by importing config.py.
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Messages are always written to the terminal. Default None does not write any messages to a logger.
 
     Returns

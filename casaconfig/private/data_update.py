@@ -15,7 +15,7 @@
 this module will be included in the api
 """
 
-def data_update(path, auto_update_rules=False, version=None, force=False, logger=None):
+def data_update(path=None, auto_update_rules=False, version=None, force=False, logger=None):
     """
     Check for updates to the installed casarundata and install the update or change to 
     the requested version when appropriate.
@@ -24,6 +24,8 @@ def data_update(path, auto_update_rules=False, version=None, force=False, logger
     when that version was installed in path, and the files installed into path. That file
     must already exist in path in order to use this function. Use pull_data to install
     casarundata into a new location.
+
+    If path is None then config.measurespath will be used.
 
     If the version is None (the default) then the most recent version returned by 
     data_available is used.
@@ -73,7 +75,7 @@ def data_update(path, auto_update_rules=False, version=None, force=False, logger
     is typically followed by a measures update.
 
     Parameters
-       - path (str) - Folder path to update. Must contain a valid readme.txt,
+       - path (str) - Folder path to update. Must contain a valid readme.txt. If not set then config.measurespath is used.
        - auto_update_rules (bool=False) - If True then the user must be the owner of path, version must be None, and force must be False.
        - version (str=None) - Version of casarundata to retrieve (usually in the form of casarundata-x.y.z.tar.gz, see data_available()). Default None retrieves the latest.
        - force (bool=False) - If True, always re-download the casarundata. Default False will not download casarundata if already updated today unless the version parameter is specified and different from what was last downloaded.
@@ -91,6 +93,15 @@ def data_update(path, auto_update_rules=False, version=None, force=False, logger
     from .print_log_messages import print_log_messages
     from .get_data_lock import get_data_lock
     from .do_pull_data import do_pull_data
+
+    if path is None:
+        from .. import config as _config
+        path = _config.measurespath
+
+    if path is None:
+        # it's not being set in a config file, probably casasiteconfig.py is being use but has not been edited
+        print_log_messages('path is None and has not been set in config.measurespath (probably casasiteconfig.py). Provide a valid path and retry.', logger, True)
+        return
 
     path = os.path.expanduser(path)
     readme_path = os.path.join(path, 'readme.txt')

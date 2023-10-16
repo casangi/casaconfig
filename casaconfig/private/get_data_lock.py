@@ -66,11 +66,10 @@ def get_data_lock(path, fn_name):
         lock_fd.truncate(0)
         lock_fd.write("locked using %s by %s on %s : pid = %s at %s" % (fn_name, getpass.getuser(), os.uname().nodename, os.getpid(), datetime.today().strftime('%Y-%m-%d:%H:%M:%S')))
         lock_fd.flush()
-    except:
-        import traceback
-        traceback.print_exc()
-        print("Unexpected failure in writing lock information to lock file %s" % lock_path)
-        print("Called by function : %s" % fn_name)
+    except Exception as exc:
+        print("ERROR! Unexpected failure in writing lock information to lock file %s" % lock_path)
+        print("ERROR! Called by function : %s" % fn_name)
+        print("ERROR! : %s" % exc)
         lock_fd.close()
         return None
 
