@@ -1,7 +1,7 @@
-# search path for measurement sets and images to load
+# search path for measurement sets and images to load, when empty then [measurespath] is used
 datapath = [ ]
 
-# location of geodetic and ephemera data
+# location of geodetic and ephemera data, default path for casaconfig data functions
 measurespath = "~/.casa/data"
 
 # automatically update measures data if not current (measurespath must be owned by the user)
