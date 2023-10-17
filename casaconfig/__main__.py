@@ -86,24 +86,22 @@ else:
         # ignore any other arguments
         
     else:
-        # do pull_update first when requested
-        if flags.pulldata:
-            print("pull_data using path=%s" % flags.measurespath)
-            casaconfig.pull_data(flags.measurespath)
-        # then data_update
-        # if this follows a pull_data then the casarundata will be up to date and this will do nothing
-        if flags.dataupdate:
-            print("data_update using path=%s" % flags.measurespath)
-            casaconfig.data_update(flags.measurespath)
-        # then measures_update
-        if flags.measuresupdate:
-            print("measures_update using path=%s" % flags.measurespath)
-            casaconfig.measures_update(flags.measurespath)
-        # then updateall
-        # if this follows other update options then this may do nothing
+        # the update options, update all does everything, no need to invoke anything else
         if flags.updateall:
             print("data_update then measures_update using path=%s" % flags.measurespath)
-            casaconfig.data_update(flags.measurespath)
-            casaconfig.measures_update(flags.measurespath)
-            
+            casaconfig.update_all(flags.measurespath)
+        else:
+            # do any pull_update first
+            if flags.pulldata:
+                print("pull_data using path=%s" % flags.measurespath)
+                casaconfig.pull_data(flags.measurespath)
+            # then data_update, not necessary if pull_data just happened
+            if flags.dataupdate and not flags.pulldata:
+                print("data_update using path=%s" % flags.measurespath)
+                casaconfig.data_update(flags.measurespath)
+            # then measures_update
+            if flags.measuresupdate:
+                print("measures_update using path=%s" % flags.measurespath)
+                casaconfig.measures_update(flags.measurespath)
+
 sys.exit(0)
