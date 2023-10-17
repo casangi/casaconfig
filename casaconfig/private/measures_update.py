@@ -119,7 +119,10 @@ def measures_update(path=None, auto_update_rules=False, version=None, force=Fals
             print_log_messages('path must exist as a directory and it must be owned by the user when auto_update_rules is True', logger, True)
             return
     
-    if not os.path.exists(path): os.mkdir(path)
+    if not os.path.exists(path):
+        # make dirs all the way down, if possible
+        os.makedirs(path)
+        
     current = None
     updated = None
     today_string = datetime.today().strftime('%Y-%m-%d')

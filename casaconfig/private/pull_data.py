@@ -153,7 +153,9 @@ def pull_data(path=None, version=None, force=False, logger=None):
         print_log_messages('version %s not found on CASA server, use casaconfig.data_available for a list of casarundata versions' % version, logger, True)
         return
 
-    if not os.path.exists(path): os.mkdir(path)
+    if not os.path.exists(path):
+        # make dirs all the way down path if possible
+        os.makedirs(path)
 
     # lock the data_update.lock file
     lock_fd = None
