@@ -214,7 +214,7 @@ def measures_update(path=None, auto_update_rules=False, version=None, force=Fals
                     print_log_messages('measures_update downloading %s from ASTRON server to %s ...' % (target, path), logger)
                     ftp.retrbinary('RETR ' + target, fid.write)
 
-                    ftp.close()
+                ftp.close()
     
                 # extract from the fetched tarfile
                 with tarfile.open(os.path.join(path,'measures.ztar'),mode='r:gz') as ztar:

@@ -90,36 +90,38 @@ def do_pull_data(path, version, installed_files, logger):
         # also log it
         if logger is not None: logger.post('downloading casarundata contents to %s ...' % path, 'INFO')
         tar.extractall(path=path)
-        print("done", file=sys.stdout)
-        # the tarball has been extracted to path/version
-        # get the instaled files of files to be written to the readme file
-        versdir = os.path.join(path,version[:version.index('.tar')])
-        installed_files = []
-        wgen = os.walk(versdir)
-        for (dirpath, dirnames, filenames) in wgen:
-            for f in filenames:
-                installed_files.append(os.path.relpath(os.path.join(dirpath,f),versdir))
+        
+    print("done", file=sys.stdout)
+        
+    # the tarball has been extracted to path/version
+    # get the instaled files of files to be written to the readme file
+    versdir = os.path.join(path,version[:version.index('.tar')])
+    installed_files = []
+    wgen = os.walk(versdir)
+    for (dirpath, dirnames, filenames) in wgen:
+        for f in filenames:
+            installed_files.append(os.path.relpath(os.path.join(dirpath,f),versdir))
                 
-        # move everything in version up a level to path
-        for f in os.listdir(versdir):
-            srcPath = os.path.join(versdir,f)
-            if os.path.isdir(srcPath):
-                # directories are first copied, then removed
-                # existing directories are reused, existing files are overwritten
-                # things in path that do not exist in srcPath are not changed
-                shutil.copytree(srcPath,os.path.join(path,f),dirs_exist_ok=True)
-                shutil.rmtree(srcPath)
-            else:
-                # assume it's a simple file, these can be moved directly, overwriting anything already there
-                os.rename(srcPath,os.path.join(path,f))
+    # move everything in version up a level to path
+    for f in os.listdir(versdir):
+        srcPath = os.path.join(versdir,f)
+        if os.path.isdir(srcPath):
+            # directories are first copied, then removed
+            # existing directories are reused, existing files are overwritten
+            # things in path that do not exist in srcPath are not changed
+            shutil.copytree(srcPath,os.path.join(path,f),dirs_exist_ok=True)
+            shutil.rmtree(srcPath)
+        else:
+            # assume it's a simple file, these can be moved directly, overwriting anything already there
+            os.rename(srcPath,os.path.join(path,f))
                         
-        # safe to remove versdir, it would be a surprise if it's not empty
-        os.rmdir(versdir)
-        # update the readme.txt file
-        with open(readme_path,'w') as fid:
-            fid.write("# casarundata populated by casaconfig.pull_data\nversion : %s\ndate : %s" % (version, datetime.today().strftime('%Y-%m-%d')))
-            fid.write("\n#\n# manifest")
-            for f in installed_files:
-                fid.write("\n%s" % f)
+    # safe to remove versdir, it would be a surprise if it's not empty
+    os.rmdir(versdir)
+    # update the readme.txt file
+    with open(readme_path,'w') as fid:
+        fid.write("# casarundata populated by casaconfig.pull_data\nversion : %s\ndate : %s" % (version, datetime.today().strftime('%Y-%m-%d')))
+        fid.write("\n#\n# manifest")
+        for f in installed_files:
+            fid.write("\n%s" % f)
 
     print_log_messages('casarundata installed %s at %s' % (version, path), logger)

@@ -33,12 +33,14 @@ nologger = False
 nogui = False
 
 # the IPython prompt color scheme. Must be one of "Neutral", "NoColor", "Linux" or "LightBG", default "Neutral"
+# if an invalid color is given a warning message is printed and logged but CASA continues using the default color
 colors = "Neutral"
 
 # startup without a graphical backend if True
 agg = False
 
 # attempt to load the pipeline modules and set other options appropriate for pipeline use if True
+# when pipeline is True then agg will be assumed to be true even if agg is set to False here or on the command line
 pipeline = False
 
 # create and use an IPython log using the iplogfile path
@@ -46,24 +48,6 @@ iplog = False
 
 # the IPython log file path name to be used when iplog is True
 iplogfile='ipython-%s.log' % _time.strftime("%Y%m%d-%H%M%S", _time.gmtime())
-
-# allow anonymous usage reporting
-telemetry_enabled = True
-
-# location to place telemetry data prior to reporting
-telemetry_log_directory = '~/.casa/telemetry'
-
-# maximum size of telemetry recording
-telemetry_log_limit = 20480
-
-# telemetry recording size that triggers a report
-telemetry_log_size_interval = 60
-
-# telemetry recording report frequency
-telemetry_submit_interval = 604800
-
-# allow anonymous crash reporting
-crashreporter_enabled = True
 
 # include the user's local site-packages in the python path if True. May conflict with CASA modules
 user_site = False

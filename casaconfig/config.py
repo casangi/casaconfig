@@ -97,7 +97,7 @@ if len(_config_defaults.datapath) == 0:
         _config_defaults.datapath = [ _config_defaults.measurespath ]
 
 # the names of config values that are path that need to be expanded here
-__path_names = ["cachedir","datapath","measurespath","logfile","iplogfile","startupfile","telemetry_log_directory"]
+__path_names = ["cachedir","datapath","measurespath","logfile","iplogfile","startupfile"]
 
 for __v in __defaults:
     globals()[__v] = getattr(_config_defaults,__v,None)
