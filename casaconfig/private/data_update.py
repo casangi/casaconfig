@@ -15,7 +15,7 @@
 this module will be included in the api
 """
 
-def data_update(path=None, version=None, force=False, logger=None, auto_update_rules):
+def data_update(path=None, version=None, force=False, logger=None, auto_update_rules=False):
     """
     Check for updates to the installed casarundata and install the update or change to 
     the requested version when appropriate.
@@ -76,7 +76,7 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
     is typically followed by a measures_update.
 
     Parameters
-       - path (str) - Folder path to update. Must contain a valid readme.txt. If not set then config.measurespath is used.
+       - path (str=None) - Folder path to update. Must contain a valid readme.txt. If not set then config.measurespath is used.
        - version (str=None) - Version of casarundata to retrieve (usually in the form of casarundata-x.y.z.tar.gz, see data_available()). Default None retrieves the latest.
        - force (bool=False) - If True, always re-download the casarundata. Default False will not download casarundata if already updated today unless the version parameter is specified and different from what was last downloaded.
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal.
