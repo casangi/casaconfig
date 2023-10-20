@@ -18,9 +18,9 @@ parser.add_argument( "--data-update", dest='dataupdate', action='store_const', c
 parser.add_argument( "--measures-update", dest='measuresupdate', action='store_const', const=True, default=False,
                      help="invoke measures_update() to update measurespath to the latest measures data")
 parser.add_argument( "--update-all", dest='updateall', action='store_const', const=True, default=False,
-                     help="invokes data_update then measures_update to update measurespath to the latest casarundata and measures data")
+                     help="invoke update_all() to populate (update) measurespath with the latest casarundata and measures data")
 parser.add_argument( "--reference-testing", action='store_const', const=True, dest='referencetesting', default=False,
-                     help="set measurespath to the casarundata when this version of casa was produced, used for testing purposes")
+                     help="set measurespath to the casarundata when this version was produced, used for testing purposes")
 parser.add_argument( "--current-data", dest='currentdata', action='store_const', const=True, default=False,
                      help="print out a summary of the current casarundata and measures data installed in measurespath and then exit")
 

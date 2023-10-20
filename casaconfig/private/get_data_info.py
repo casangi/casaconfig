@@ -33,8 +33,8 @@ def get_data_info(path=None, logger=None):
     into place when a modular CASA is built. It is the release.txt for the
     data appropriate for that module CASA release and it used by the "--reference-testing"
     command line option for casaconfig. That allows casaconfig to install that
-    casarundata version for testing purposes. The release information comes from the
-    casaconfig module and does not depend on the path argument.
+    casarundata version for testing purposes. The release information does not depend 
+    on the path argument.
 
     If path is empty or does not exist then the return value for the 'casarundata' and
     'measures' types is None.
@@ -49,9 +49,9 @@ def get_data_info(path=None, logger=None):
     and ephemeris directories are present in path then the version returned for 'measures' is
     'unknown' and the date is an empty string. The path location may contain measures data from
     a legacy installation of CASA data. CASA may be able to use any measures tables at this
-    location by they may not be maintained by casaconfig.
+    location by they can not be maintained by casaconfig.
 
-    If 'release_data_readme.txt' file is not found with the casaconfig module the returned
+    If no casadata release information is found the returned
     value for 'release' is None and the "--reference-testing" option will not do anything
     for this installation of casaconfig. This will be the case for a modular installation.
 
@@ -63,7 +63,7 @@ def get_data_info(path=None, logger=None):
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the the terminal.
     
     Returns
-       dict - a dictionary by type, 'casarundata', 'measures', 'release' where each type is a dictionary 'version', 'date'. A return value of None indicates path is unset. A value of None for that type means no information could be found about that type.
+       dict - a dictionary by type, 'casarundata', 'measures', 'release' where each type is a dictionary containing 'version' and 'date'. A return value of None indicates path is unset. A value of None for that type means no information could be found about that type.
     """
 
     # when None is returned, path wasn't set

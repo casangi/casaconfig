@@ -104,9 +104,9 @@ for __v in __defaults:
     if (__v in __path_names) :
         # expand ~ or ~user constructs and make sure they are absolute paths
         if (type(globals()[__v]) is list) :
-            vlist = list(map(__os.path.expanduser, globals()[__v]))
-            vlist = list(map(__os.path.abspath,vlist))
-            globals()[__v] = vlist
+            __vlist = list(map(__os.path.expanduser, globals()[__v]))
+            __vlist = list(map(__os.path.abspath,__vlist))
+            globals()[__v] = __vlist
         else:
             globals()[__v] = __os.path.abspath(__os.path.expanduser(globals()[__v]))
                                              

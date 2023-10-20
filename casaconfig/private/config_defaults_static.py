@@ -1,7 +1,7 @@
-# search path for measurement sets and images to load, when empty then [measurespath] is used
+# lsit of paths where CASA should search for data subdirectories. Default [measurespath].
 datapath = [ ]
 
-# location of geodetic and ephemera data, default path for casaconfig data functions
+# location of required measures data, takes precedence over any measures data also present in datapath.
 measurespath = "~/.casa/data"
 
 # automatically update measures data if not current (measurespath must be owned by the user)
@@ -26,7 +26,7 @@ nologfile = False
 # print log output to terminal when True (in addition to any logfile and CASA logger)
 log2term = False
 
-# do not start the CASA logger when True
+# do not start the CASA logger GUI when True
 nologger = False
 
 # avoid starting GUI tools when True. If True then the CASA logger is not started even if nologger is False

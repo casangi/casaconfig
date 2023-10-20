@@ -15,7 +15,7 @@
 this module will be included in the api
 """
 
-def measures_update(path=None, auto_update_rules=False, version=None, force=False, logger=None):
+def measures_update(path=None, version=None, force=False, logger=None, auto_update_rules=False):
     """
     Retrieve IERS data used for measures calculations from ASTRON server
     
@@ -27,7 +27,7 @@ def measures_update(path=None, auto_update_rules=False, version=None, force=Fals
     A text file (readme.txt in the geodetic directory in path) records the version string
     and the date when that version was installed in path.
 
-    If path is None then config.measurespath will be used.
+    If path is None then config.measurespath is used.
 
     If the version requested matches the one in that text file then this function does
     nothing unless force is True.
@@ -36,18 +36,26 @@ def measures_update(path=None, auto_update_rules=False, version=None, force=Fals
     is today, then this function does nothing unless force is True even if there is a more
     recent version available from the ASTRON server.
 
-    Automatic updating (when the measures_auto_update config value is True) uses this
-    function as the casatools module is starting so that the updated measures are in
-    place before any tool needs to use them. 
+    When auto_update_rules is True then path must be owned by the user, force must be False,
+    and the version must be None. This is used during casatools initialization when 
+    measures_auto_update is True. Automatic updating happens during casatools initialization
+    so that the updated measures are in place before any tool needs to use them.
 
     Using measures_update after casatools has started should always be followed by exiting 
     and restarting casa (or the casatools module if modular casa components are being used).
 
-    A file lock is used to prevent more that one measures_update and data_update from updating
-    the measures files in path at the same time. When locked, the lock file (data_update.lock 
-    in path) will contain information about the process that has the lock. When a measures_update
-    gets the lock it will check the readme.txt file in the geodetic directory in path
-    to make sure that an update is still necessary (if force is True an update always happens).
+    A file lock is used to prevent more that one data update (pull_data, measures_update,
+    or data_update) from updating any files in path at the same time. When locked, the 
+    lock file (data_update.lock in path) contains information about the process that
+    has the lock. When measures_update gets the lock it checks the readme.txt file in path
+    to make sure that an update is still necessary (if force is True then an update 
+    always happens). If the lock file is not empty then a previous update of path (pull_data,
+    data_update, or measures_update) did not exit as expected and the contents of path are
+    suspect. In that case, an error will be reported and nothing will be updated. The lock
+    file can be checked to see the details of when that file was locked. The lock file can be
+    removed and measures_update can be tried again. It may be safest in that case to remove path
+    completely or use a different path and use pull_data to install a fresh copy of the
+    desired version.
 
     Care should be used when using measures_update outside of the normal automatic
     update that other casa sessions are not using the same measures at the same time,
@@ -72,10 +80,10 @@ def measures_update(path=None, auto_update_rules=False, version=None, force=Fals
 
     Parameters
        - path (str) - Folder path to place updated measures data. Must contain a valid geodetic/readme.txt. If not set then config.measurespath is used.
-       - auto_update_rules (bool=False) - If True then the user must be the owner of path, version must be None, and force must be False.
        - version (str=None) - Version of measures data to retrieve (usually in the form of yyyymmdd-160001.ztar, see measures_available()). Default None retrieves the latest.
        - force (bool=False) - If True, always re-download the measures data. Default False will not download measures data if already updated today unless the version parameter is specified and different from what was last downloaded.
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
+       - auto_update_rules (bool=False) - If True then the user must be the owner of path, version must be None, and force must be False.
         
     Returns
        None

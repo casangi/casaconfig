@@ -15,7 +15,7 @@
 this module will be included in the api
 """
 
-def data_update(path=None, auto_update_rules=False, version=None, force=False, logger=None):
+def data_update(path=None, version=None, force=False, logger=None, auto_update_rules):
     """
     Check for updates to the installed casarundata and install the update or change to 
     the requested version when appropriate.
@@ -25,25 +25,26 @@ def data_update(path=None, auto_update_rules=False, version=None, force=False, l
     must already exist in path in order to use this function. Use pull_data to install
     casarundata into a new location.
 
-    If path is None then config.measurespath will be used.
+    If path is None then config.measurespath is used.
 
     If the version is None (the default) then the most recent version returned by 
     data_available is used.
 
-    If the version requested matches the one in that text file then this function does
+    If the version requested matches the one in the readme.txt file at path then this function does
     nothing unless force is True.
 
-    If a specific version is not requested (the default) and the date in that text file
-    is today, then this function does nothing unless force is True even if there is a more
+    If a specific version is not requested (the default) and the date in the readme.txt file
+    at path is today, then this function does nothing unless force is True even if there is a more
     recent version available from the CASA server.
 
     When auto_update_rules is True then path must be owned by the user, force must be
-    False and the version must be None. This is used by casatools initialization when
-    data_auto_update is True.
+    False and the version must be None. This is used during casatools initialization when
+    data_auto_update is True. Automatic updating happens during casatools initialization
+    so that the updated casarundata and measures are in place before any tool needs to use them.
 
     If an update is to be installed the previously installed files, as listed in the 
-    readme.txt file, will first be removed and then all of the contents of the version 
-    being installed by the update are installed. This includes the set of measures tables
+    readme.txt file at path, are removed before the contents of the version 
+    being installed are unpacked. This includes the set of measures tables
     that are part of that casarundata version. A data update is typically followed by a
     measures_update to ensure that the most recent measures data are installed.
 
@@ -72,14 +73,14 @@ def data_update(path=None, auto_update_rules=False, version=None, force=False, l
     write permissions there). The version must then also be None and the force option must be False.
 
     **Note:** the most recent casarundata may not include the most recent measures data. A data_update
-    is typically followed by a measures update.
+    is typically followed by a measures_update.
 
     Parameters
        - path (str) - Folder path to update. Must contain a valid readme.txt. If not set then config.measurespath is used.
-       - auto_update_rules (bool=False) - If True then the user must be the owner of path, version must be None, and force must be False.
        - version (str=None) - Version of casarundata to retrieve (usually in the form of casarundata-x.y.z.tar.gz, see data_available()). Default None retrieves the latest.
        - force (bool=False) - If True, always re-download the casarundata. Default False will not download casarundata if already updated today unless the version parameter is specified and different from what was last downloaded.
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal.
+       - auto_update_rules (bool=False) - If True then the user must be the owner of path, version must be None, and force must be False.
         
     Returns
        None

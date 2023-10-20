@@ -17,9 +17,9 @@ this module will be included in the api
 
 def pull_data(path=None, version=None, force=False, logger=None):
     """
-    Pull the package data contents from the CASA host and install it in path.
+    Pull the casarundata contents from the CASA host and install it in path.
 
-    The path must either contain a previously installed version of the package data 
+    The path must either contain a previously installed version of casarundata 
     or it must not exist or be empty.
 
     If path is None then config.measurespath will be used.
@@ -36,7 +36,7 @@ def pull_data(path=None, version=None, force=False, logger=None):
     version already matches what was previously installed (no installation is then
     necessary unless force is True).
 
-    The measures tables included in the package data will typically 
+    The measures tables included in casarundata will typically 
     not be the most recent version. To get the most recent measures data, measures_update
     should be used after pull_data.
 
@@ -53,12 +53,12 @@ def pull_data(path=None, version=None, force=False, logger=None):
     did not exit as expected and the contents of path are suspect. In that case, pull_data
     will report that as an error and nothing will be updated. The lock file can be checked
     to see the details of when that file was locked. The lock file can be removed and
-    pull_data can be then be used to install the desired version. It may be safest in that case
+    pull_data can then be used to install the desired version. It may be safest in that case
     to remove path completely or use a different path and run pull_data to install 
     a fresh copy of the desired version.
 
     Some of the tables installed by pull_data are only read when casatools starts. Use of 
-    pull_data after CASA has started should typically be followed by a restart so that 
+    pull_data should typically be followed of CASA by a restart so that 
     any changes are seen by the tools and tasks that use this data.
 
     Parameters
