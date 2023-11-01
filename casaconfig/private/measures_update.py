@@ -21,8 +21,10 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     
     Original data source is here: https://www.iers.org/IERS/EN/DataProducts/data.html
 
-    CASA maintains a separate Observatory table which is used by measures_update instead 
-    of the version that accompanies the ASTRON measures tables.
+    CASA maintains a separate Observatories table which is available in the casarundata
+    collection through pull_data and data_update. The Observatories table found at ASTRON
+    is not installed by measures_update and any Observatories file at path will not be changed
+    by using this function.
 
     A text file (readme.txt in the geodetic directory in path) records the version string
     and the date when that version was installed in path.
@@ -229,7 +231,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
                     # the list of members to extract
                     x_list = []
                     for m in ztar.getmembers() :
-                        # always exclude *.old names in geodetic and the Observatories table
+                        # always exclude the Observatories table and  *.old names in geodetic
                         if not((re.search('geodetic',m.name) and re.search('.old',m.name)) or re.search('Observatories',m.name)):
                             x_list.append(m)
 
@@ -237,13 +239,6 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
                     ztar.close()
 
                 os.system("rm %s" % os.path.join(path, 'measures.ztar'))
-
-                # get the Observatories table from CASA
-                print_log_messages('measures_update obtaining the Observatories table from CASA', logger)
-                context = ssl.create_default_context(cafile=certifi.where())
-                tstream = urllib.request.urlopen('https://casa.nrao.edu/download/geodetic/observatories.tar.gz', context=context, timeout=400)
-                tar = tarfile.open(fileobj=tstream, mode="r:gz")
-                tar.extractall(path=path)
 
                 # update the readme.txt file
                 with open(readme_path,'w') as fid:
