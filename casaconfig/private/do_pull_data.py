@@ -1,4 +1,4 @@
-# Copyright 2020 AUI, Inc. Washington DC, USA
+# Copyright 2023 AUI, Inc. Washington DC, USA
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-def do_pull_data(path, version, installed_files, logger):
+def do_pull_data(path, version, installed_files, currentVersion, currentDate, logger):
     """
     Pull the casarundata for the given version and install it in path, removing
     the isntalled files and updating the readme.txt file when done.
@@ -27,6 +27,8 @@ def do_pull_data(path, version, installed_files, logger):
        - path (str) - Folder path to place casadata contents.
        - version (str) - casadata version to retrieve.
        - installed_files (str list) - list of installed files from the version already installed. Set to an empty list if there is no previously installed version.
+       - currentVersion (str) - from the readme file if it already exists, or an empty string if there is no previously installed version.
+       - currentDate (str) - from the readme file if it already exists, or an empty string if there is no previously installed version.
        - logger (casatools.logsink) - Instance of the casalogger to use for writing messages. Messages are always written to the terminal. Set to None to skip writing messages to a logger.
 
     Returns

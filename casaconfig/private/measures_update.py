@@ -106,6 +106,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
 
     from .print_log_messages import print_log_messages
     from .get_data_lock import get_data_lock
+    from .read_readme import read_readme
     
     if path is None:
         from .. import config as _config
@@ -142,13 +143,10 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     # if measures are already preset, get their version
     readme_path = os.path.join(path,'geodetic/readme.txt')
     if os.path.exists(readme_path):
-        try:
-            with open(readme_path, 'r') as fid:
-                readme = fid.readlines()
-            current = readme[1].split(':')[-1].strip()
-            updated = readme[2].split(':')[-1].strip()
-        except:
-            pass
+        readmeInfo = read_readme(readme_path)
+        if readmeInfo is not None:
+            current = readmeInfo['version']
+            updated = readmeInfo['date']
 
     # don't re-download the same data
     if not force:
@@ -184,13 +182,10 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
             current = None
             updated = None
             if os.path.exists(readme_path):
-                try:
-                    with open(readme_path, 'r') as fid:
-                        readme = fid.readlines()
-                        current = readme[1].split(':')[-1].strip()
-                        updated = readme[2].split(':')[-1].strip()
-                except:
-                    pass
+                readmeInfo = read_readme(readme_path)
+                if readmeInfo is not None:
+                    current = readmeInfo['version']
+                    updated = readmeInfo['date']
 
             if ((version is not None) and (version == current)) or ((version is None) and (updated == today_string)):
                 # no update will be done, version is as requested or it's already been updated today

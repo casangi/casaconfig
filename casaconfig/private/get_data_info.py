@@ -25,16 +25,16 @@ def get_data_info(path=None, logger=None):
     The path is the location to use to search for the installed release information.
     The path argument defaults to config.measurespath when not set.
 
-    For each type the value is a dictionary of 'version' and 'date' where
-    version is the version string and date is the date when it was installed.
-    These values are taken from the readme.txt file for each type.
+    The casarundata and measures type value are each a dictionary of 'version' 
+    and 'date' where version is the version string and date is the date when it  
+    was installed These values are taken from the readme.txt file for each type.
 
     The 'release' type is from the release_data_readme.txt file which is copied
-    into place when a modular CASA is built. It is the release.txt for the
-    data appropriate for that module CASA release and it used by the "--reference-testing"
-    command line option for casaconfig. That allows casaconfig to install that
+    into place when a modular CASA is built. It consists of a dictionary of
+    'casarundata' and 'measures' where the values are the version strings for each
+    type of data for this release. That allows casaconfig to install that
     casarundata version for testing purposes. The release information does not depend 
-    on the path argument.
+    on the path argument since it is found in the casaconfig module.
 
     If path is empty or does not exist then the return value for the 'casarundata' and
     'measures' types is None.
@@ -51,7 +51,7 @@ def get_data_info(path=None, logger=None):
     a legacy installation of CASA data. CASA may be able to use any measures tables at this
     location by they can not be maintained by casaconfig.
 
-    If no casadata release information is found the returned
+    If no casadata release information is found or the contents are unexpected the returned
     value for 'release' is None and the "--reference-testing" option will not do anything
     for this installation of casaconfig. This will be the case for a modular installation.
 
@@ -72,6 +72,7 @@ def get_data_info(path=None, logger=None):
     import os
     import importlib.resources
     from .print_log_messages import print_log_messages
+    from .read_readme import read_readme
 
     if path is None:
         from .. import config as _config
@@ -94,16 +95,14 @@ def get_data_info(path=None, logger=None):
         datareadme_path = os.path.join(path,'readme.txt')
         if os.path.exists(datareadme_path):
             # the readme exists, get the info
-            try:
-                with open(datareadme_path, 'r') as fid:
-                    readme = fid.readlines()
-                    currentVersion = readme[1].split(':')[1].strip()
-                    currentDate = readme[2].split(':')[1].strip()
-                    # this one is just a check that there's the manifest is probably also OK
-                    line4 = readme[4]
+            result['casarundata'] = {'version':'error', 'date':''}
+            readmeContents = read_readme(datareadme_path)
+            if readmeContents is not None:
+                currentVersion = readmeContents['version']
+                currentDate = readmeContents['date']
+                # this one is just a check that the manifest at least exists
+                if len(readmeContents['extra']) > 0:
                     result['casarundata'] = {'version':currentVersion, 'date':currentDate}
-            except:
-                result['casarundata'] = {'version':'error', 'date':''}
         else:
             # does it look like it's probably casarundata?
             expected_dirs = ['alma','catalogs','demo','ephemerides','geodetic','gui','nrao']
@@ -121,14 +120,12 @@ def get_data_info(path=None, logger=None):
         measuresreadme_path = os.path.join(path,'geodetic/readme.txt')
         if os.path.exists(measuresreadme_path):
             # the readme exists, get the info
-            try:
-                with open(measuresreadme_path, 'r') as fid:
-                    readme = fid.readlines()
-                    currentVersion = readme[1].split(':')[1].strip()
-                    currentDate = readme[2].split(':')[1].strip()
-                    result['measures'] = {'version':currentVersion, 'date':currentDate}
-            except:
-                result['measures'] = {'version':'error', 'date':''}
+            result['measures'] = {'version':'error', 'date':''}
+            readmeContents = read_readme(measuresreadme_path)
+            if readmeContents is not None:
+                currentVersion = readmeContents['version']
+                currentDate = readmeContents['date']
+                result['measures'] = {'version':currentVersion,'date':currentDate}
         else:
             # does it look like it's probably measuresdata?
             # path should have ephemerides and geodetic directories
@@ -141,12 +138,49 @@ def get_data_info(path=None, logger=None):
     # release data versions
     if importlib.resources.is_resource('casaconfig','release_data_readme.txt'):
         try:
+            casarundataVersion = None
+            measuresVersion = None
+            ok = True
+            reason = None
             readme_lines = importlib.resources.read_text('casaconfig','release_data_readme.txt').split('\n')
-            currentVersion = readme_lines[1].split(':')[1].strip()
-            currentDate = readme_lines[2].split(':')[1].strip()
-            result['release'] = {'version':currentVersion, 'date':currentDate}
+            for readmeLine in readme_lines:
+                # lines must contain something and not start with #
+                if len(readmeLine) > 0 and readmeLine[0] != '#':
+                    splitLine = readmeLine.split(':')
+                    if len(splitLine) == 2:
+                        lineType = splitLine[0].strip()
+                        lineVers = splitLine[1].strip()
+                        if lineType == 'casarundata':
+                            if casarundataVersion is not None:
+                                ok = False
+                                reason = "duplicate casarundata lines"
+                                break
+                            casarundataVersion = lineVers
+                        elif lineType == 'measures':
+                            if measuresVersion is not None:
+                                ok = False
+                                reason = "duplicate measures lins"
+                                break
+                            measuresVersion = lineVers
+                        else:
+                            ok = False
+                            reason = "Unexpected type : %s" % lineType
+                            break
+                    else:
+                        ok = False
+                        reason = "Missing or too many ':' separators"
+            if (casarundataVersion is None or measuresVersion is None) and ok:
+                ok = False
+                reason = "missing one or more version strings for expected casarundata and measures types"
+
+            if not ok:
+                print_log_messages("Incorrectly formatted release_data_readme.txt. %s" % reason, logger, True)
+                # leave 'release' as None
+            else:
+                result['release'] = {'casarundata':casarundataVersion, 'measures':measuresVersion}
         except:
-            result['release'] = {'version':'error', 'date':''}
+            print("Unexpected error reading release_data_readme.txt")
+            # leave 'release' as None
     else:
         # no release information available, probably a modular install only
         # leave 'release' as None

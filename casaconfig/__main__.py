@@ -41,17 +41,17 @@ if flags.measurespath is None:
     print("Either provide a measurespath on the casaconfig command line or edit casasiteconfig.py or other a user config.py to set measurespath to a location.")
     sys.exit(1)
 
-# do any expanduser and abspath
+# do any expanduser and abspath - this is what should be used
 measurespath = os.path.abspath(os.path.expanduser(flags.measurespath))
 
 if flags.currentdata:
     if not os.path.exists(measurespath) or not os.path.isdir(measurespath):
-        print("No data installed at %s. The measurespath does not exist or is not a directory." % flags.measurespath)
+        print("No data installed at %s. The measurespath does not exist or is not a directory." % measurespath)
     else:
         # casarundata
         datareadme = os.path.join(measurespath,'readme.txt')
         if not os.path.exists(datareadme):
-            print("No casarundata installed in %s (missing readme.txt)." % flags.measurespath)
+            print("No casarundata installed in %s (missing readme.txt)." % measurespath)
         else:
             try:
                 with open(datareadme, 'r') as fid:
@@ -60,14 +60,14 @@ if flags.currentdata:
                     currentDate = readme[2].split(':')[1].strip()
                     print('casarundata version %s installed on %s' % (currentVersion, currentDate))
                     if (len(readme)<4):
-                        print('    casarundata appears to be too short, missing list of installed files, casarundata should be repopulated in %s' % flags.measurespath)
+                        print('    casarundata appears to be too short, missing list of installed files, casarundata should be repopulated in %s' % measurespath)
             except:
-                print('There was a problem reading the casarundata readme.txt, casarundata should be repopulated in %s' % flags.measurespath)
+                print('There was a problem reading the casarundata readme.txt, casarundata should be repopulated in %s' % measurespath)
                 
         # measures
         measuresreadme = os.path.join(measurespath,'geodetic/readme.txt')
         if not os.path.exists(measuresreadme):
-            print("No measures data installed in %s/geodetic (missing readme.txt)." % flags.measurespath)
+            print("No measures data installed in %s/geodetic (missing readme.txt)." % measurespath)
         else:
             try:
                 with open(measuresreadme, 'r') as fid:
@@ -76,32 +76,32 @@ if flags.currentdata:
                     currentDate = readme[2].split(':')[1].strip()
                     print('measures version %s installed on %s' % (currentVersion, currentDate))
             except:
-                print('There was a problem reading the measures readme.txt, measures should be repopulated in %s' % flags.measurespath)
+                print('There was a problem reading the measures readme.txt, measures should be repopulated in %s' % measurespath)
  
     # ignore any other arguments
 
 else:
     if flags.referencetesting:
-        print("--reference-testing is not yet implemented, measurespath=%s" % flags.measurespath)
-        # ignore any other arguments
-        
+        print("reference testing using pull_data and 'release' version into %s" % measurespath)
+        casaconfig.pull_data(measurespath,'release')
+        # ignore all other options
     else:
         # the update options, update all does everything, no need to invoke anything else
         if flags.updateall:
-            print("data_update then measures_update using path=%s" % flags.measurespath)
-            casaconfig.update_all(flags.measurespath)
+            print("data_update then measures_update using path=%s" % measurespath)
+            casaconfig.update_all(measurespath)
         else:
             # do any pull_update first
             if flags.pulldata:
-                print("pull_data using path=%s" % flags.measurespath)
-                casaconfig.pull_data(flags.measurespath)
+                print("pull_data using path=%s" % measurespath)
+                casaconfig.pull_data(measurespath)
             # then data_update, not necessary if pull_data just happened
             if flags.dataupdate and not flags.pulldata:
-                print("data_update using path=%s" % flags.measurespath)
-                casaconfig.data_update(flags.measurespath)
+                print("data_update using path=%s" % measurespath)
+                casaconfig.data_update(measurespath)
             # then measures_update
             if flags.measuresupdate:
-                print("measures_update using path=%s" % flags.measurespath)
-                casaconfig.measures_update(flags.measurespath)
+                print("measures_update using path=%s" % measurespath)
+                casaconfig.measures_update(measurespath)
 
 sys.exit(0)

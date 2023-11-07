@@ -30,6 +30,11 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
     If the version is None (the default) then the most recent version returned by 
     data_available is used.
 
+    If version is "release" then the version associated with the release in 
+    the dictionary returned by get_data_info is used. If there is no release
+    version information known then an error message is printed and nothing is
+    updated.
+
     If the version requested matches the one in the readme.txt file at path then this function does
     nothing unless force is True.
 
@@ -94,6 +99,8 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
     from .print_log_messages import print_log_messages
     from .get_data_lock import get_data_lock
     from .do_pull_data import do_pull_data
+    from .get_data_info import get_data_info
+    from .read_readme import read_readme
 
     if path is None:
         from .. import config as _config
@@ -134,15 +141,12 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
     installed_files = []
     currentVersion = []
     currentDate = []
-    try:
-        with open(readme_path, 'r') as fid:
-            readme = fid.readlines()
-            currentVersion = readme[1].split(':')[1].strip()
-            currentDate = readme[2].split(':')[1].strip()
-            for readme_line in readme[3:]:
-                if (readme_line[0] != '#'):
-                    installed_files.append(readme_line.strip())
-    except:
+    dataReadmeInfo = read_readme(readme_path)
+    if dataReadmeInfo is not None:
+        currentVersion = dataReadmeInfo['version']
+        currentDate = dataReadmeInfo['date']
+        installed_files = dataReadmeInfo['extra']
+    else:
         print_log_messages('The readme.txt file at path could not be read as expected', logger, True)
         print_log_messages('choose a different path or empty this  path and try again using pull_data', logger, True)
         # no lock has been set yet, safe to simply return here
@@ -164,9 +168,20 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
 
     available_data = data_available()
     requestedVersion = version
+
     if requestedVersion is None:
         requestedVersion = available_data[-1]
-        
+
+    expectedMeasuresVersion = None
+    if requestedVersion is 'release':
+        # use the release version from get_data_info
+        releaseInfo = get_data_info()['release']
+        if releaseInfo is None:
+            print_log_messages('No release info found, pull_data can not continue', logger, True)
+            return
+        requestedVersion = releaseInfo['casarundata']
+        expectedMeasuresVersion = releaseInfo['measures']
+
     if requestedVersion not in available_data:
         print_log_messages('Requested casarundata version %s was not found. See available_data for a list of available casarundata versions.' % requestedVersion)
         # no lock has been set yet, safe to simply return here
@@ -174,9 +189,28 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
 
     # don't update if force is false and the requested version is already installed
     if force is False and (currentVersion == requestedVersion):
-        print_log_messages('Requested casarundata is installed in %s, using version %s' % (path, currentVersion), logger)
-        # no lock has been set yet, safe to simply return here
-        return
+        if expectedMeasuresVersion is not None:
+            # the 'release' version has been requested, need to check the measures version
+            # assume a force is necessary until the measures version is known to be OK
+            force = True
+            measures_readme_path = os.path.join(path,'geodetic/readme.txt')
+            if os.path.exists(measures_readme_path):
+                measuresReadmeInfo = read_readme(measures_readme_path)
+                if measuresReadmeInfo is not None:
+                    measuresVersion = measuresReadmeInfo['version']
+                    if measuresVersion == expectedMeasuresVersion:
+                        # it's OK, do not force
+                        force = False
+                # if measuresReadmeInfo is None then that's a problem and force remains True
+            if not force:
+                print_log_messages('data_update requested "release" version of casarundata and measures are already installed.', logger)
+                # no lock has been set yet, safe to simply return here
+                return
+        else:
+            # normal usage, ok to return now
+            print_log_messages('Requested casarundata is installed in %s, using version %s' % (path, currentVersion), logger)
+            # no lock has been set yet, safe to simply return here
+            return
 
     # an update appears necessary
 
@@ -195,35 +229,47 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
 
         do_update = True
         # it's possible that another process had path locked and updated the readme with new information, re-read it
-        try :
-            readme = None
-            with open(readme_path, 'r') as fid:
-                readme = fid.readlines()
-                currentVersion = readme[1].split(':')[-1].strip()
-                currentDate = readme[2].split(':')[-1].strip()
+        dataReadmeInfo = read_readme(readme_path)
+        if dataReadmeInfo is not None:
+            currentVersion = dataReadmeInfo['version']
+            currentDate = dataReadmeInfo['date']
+            installedFiles = dataReadmeInfo['extra']
             if ((currentVersion == requestedVersion) and (not force)):
-                # nothing to do here, already at the expected version and an update is not being forced
-                do_update = False
-                print_log_messages('data_update requested version is already installed.', logger)
-            else:
-                installed_files = []
-                for readme_line in readme[3:]:
-                    installed_files.append(readme_line.strip())
+                if expectedMeasuresVersion is not None:
+                    # this is a 'release' update request, need to check that the measures version is also now OK
+                    measures_readme_path = os.path.update(path,'geodetic/readme.txt')
+                    if os.path.exists(measures_readme_path):
+                        measuresReadmeInfo = read_readme(measures_readme_path)
+                        if measuresReadmeInfo is not None:
+                            measuresVersion = measuresReadmeInfo['version']
+                            if measuresVersion == expectedMeasuresVersion:
+                                do_update = False
+                        # if measuresReadmeInfo is None there was a problem which requires a full update so do_update remains True
+                    if not do_update:
+                        print_log_messages('data update requested "release" version of casarundata and measures are already installed.', logger)
+                else:
+                    # nothing to do here, already at the expected version and an update is not being forced
+                    do_update = False
+                    print_log_messages('data_update requested version is already installed.', logger)
+                    
+            if do_update:
+                # update is still on, check the manifest
                 if len(installed_files) == 0:
                     # this shouldn't happen, do not do an update
                     do_update = False
                     print_log_messages('The readme.txt file read at path did not contain the expected list of installed files', logger, True)
                     print_log_messages('This should not happen unless multiple sessions are trying to update data at the same time and one experienced problems or was done out of sequence', logger, True)
-                    print_log_messages('Check for other updates in process or choose a different path or clear out this path and try again using pull', logger, True)
-        except:
+                    print_log_messages('Check for other updates in process or choose a different path or clear out this path and try again using pull_data or update_all', logger, True)
+        else:
             # this shouldn't happen, do not do an update
             do_update = False
-            print_log_messages('Unexpected error reading readme.txt file during data_update, can not safely update to the requested version', logger, True)
+            print_log_messages('Unexpected problem reading readme.txt file during data_update, can not safely update to the requested version', logger, True)
             print_log_messages('This should not happen unless multiple sessions are trying to update at the same time and one experienced problems or was done out of sequence', logger, True)
+            print_log_messages('Check for other updates in process or choose a different path or clear out this path and try again using pull_data or update_all', logger, True)
 
     
         if do_update:
-            do_pull_data(path, requestedVersion, installed_files, logger)
+            do_pull_data(path, requestedVersion, installed_files, currentVersion, currentDate, logger)
 
         # truncate the lock file
         lock_fd.truncate(0)
@@ -232,8 +278,8 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
         print_log_messages('ERROR! : Unexpected exception while populating casarundata version %s to %s' % (requestedVersion, path), logger, True)
         print_log_messages('ERROR! : %s' % exc, logger, True)
         # leave the contents of the lock file as is to aid in debugging
-        import traceback
-        traceback.print_exc()
+        # import traceback
+        # traceback.print_exc()
 
     # if the lock file is not closed, do that now to release the lock
     if lock_fd is not None and not lock_fd.closed:
