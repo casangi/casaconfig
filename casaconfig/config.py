@@ -46,7 +46,7 @@ __defaults = [ x for x in dir(_config_defaults) if not x.startswith('_') ]
 __parser = __get_argparser()
 __flags,__args = __parser.parse_known_args(__sys.argv)
 __user_config = [ ] if __flags.noconfig else [ __flags.configfile ]
-__site_config = [ ] if __flags.nositeconfig else [ 'casaconfigsite' ]
+__site_config = [ ] if __flags.nositeconfig else [ 'casasiteconfig' ]
 
 ## files to be evaluated/loaded
 __config_files = [ * __site_config , *__user_config ]
