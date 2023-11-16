@@ -154,7 +154,7 @@ def pull_data(path=None, version=None, force=False, logger=None):
         version = available_data[-1]
 
     expectedMeasuresVersion = None
-    if version is 'release':
+    if version == 'release':
         # use the release version from get_data_info
         releaseInfo = get_data_info()['release']
         if releaseInfo is None:

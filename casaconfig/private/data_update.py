@@ -173,7 +173,7 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
         requestedVersion = available_data[-1]
 
     expectedMeasuresVersion = None
-    if requestedVersion is 'release':
+    if requestedVersion == 'release':
         # use the release version from get_data_info
         releaseInfo = get_data_info()['release']
         if releaseInfo is None:
