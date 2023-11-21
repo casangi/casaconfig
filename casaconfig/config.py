@@ -104,12 +104,35 @@ for __v in __defaults:
     if (__v in __path_names) :
         # expand ~ or ~user constructs and make sure they are absolute paths
         if (type(globals()[__v]) is list) :
-            __vlist = list(map(__os.path.expanduser, globals()[__v]))
-            __vlist = list(map(__os.path.abspath,__vlist))
+            # None values cause problems with expanduser, do these individually
+            # None values aren't useful in a list, don't carry them forward
+            __vlist = []
+            for __vval in globals()[__v]:
+                if __vval is not None:
+                    __vval = __os.path.abspath(__os.path.expanduser(__vval))
+                    __vlist.append(__vval)
+                else:
+                    # debugging for now
+                    print("None value seen in config parameter list %s, skipped" % __v)
+                    print("__loaded_config_files : ")
+                    for __f in __loaded_config_files:
+                        print("  %s" % __f)
+                        
             globals()[__v] = __vlist
         else:
-            globals()[__v] = __os.path.abspath(__os.path.expanduser(globals()[__v]))
-                                             
+            # watch for None values here (possibly also in the list, but just here for now)
+            if globals()[__v] is not None:
+                globals()[__v] = __os.path.abspath(__os.path.expanduser(globals()[__v]))
+            else:
+                # debugging for now
+                print("None value seen while expanding path-like fields for config parameter %s" % __v)
+                print("__loaded_config_files : ")
+                for __f in __loaded_config_files:
+                    print("   %s" % __f)
+                print("__config_files : ")
+                for __f in __config_files:
+                    print("  %s" % __f)
+                
 def load_success( ):
     return __loaded_config_files
 def load_failure( ):
