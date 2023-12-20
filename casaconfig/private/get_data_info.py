@@ -43,13 +43,15 @@ def get_data_info(path=None, logger=None):
     expected for casarundata then the version returned for 'casarundata' is 'unknown' and
     the date is an empty string. The path location may contain casarundata from a legacy
     installation of CASA data. CASA may be able to use the files at this location but they
-    can not be maintained by casaconfig.
+    can not be maintained by casaconfig. If the path is not empty but does not appear to 
+    contain legacy casarundata then the version is 'invalid'.
 
     If no readme.txt file can be found for the measures at path/geodetic but both the geodetic
     and ephemeris directories are present in path then the version returned for 'measures' is
     'unknown' and the date is an empty string. The path location may contain measures data from
     a legacy installation of CASA data. CASA may be able to use any measures tables at this
-    location by they can not be maintained by casaconfig.
+    location by they can not be maintained by casaconfig. If the path is not empty but does not
+    appear to contain legacy measures data then the version is 'invalid'.
 
     If no casadata release information is found or the contents are unexpected the returned
     value for 'release' is None and the "--reference-testing" option will not do anything
@@ -60,7 +62,7 @@ def get_data_info(path=None, logger=None):
 
     Parameters
        - path (str) - Folder path to find the casarundata and measures data information. If not set then config.measurespath is used.
-       - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the the terminal.
+       - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal.
     
     Returns
        dict - a dictionary by type, 'casarundata', 'measures', 'release' where each type is a dictionary containing 'version' and 'date'. A return value of None indicates path is unset. A value of None for that type means no information could be found about that type.
@@ -114,7 +116,7 @@ def get_data_info(path=None, logger=None):
                 result['casarundata'] = {'version':'unknown', 'date':''}
             else:
                 # probably not casarundata
-                result['casarundata'] = {'version':'not casarundata', 'date':''}
+                result['casarundata'] = {'version':'invalid', 'date':''}
 
         # look for the measures readme
         measuresreadme_path = os.path.join(path,'geodetic/readme.txt')
@@ -133,7 +135,7 @@ def get_data_info(path=None, logger=None):
                 result['measures'] = {'version':'unknown', 'date':''}
             else:
                 # probably not measuresdata
-                result['measures'] = {'version':'not measures', 'date':''}
+                result['measures'] = {'version':'invalid', 'date':''}
 
     # release data versions
     if importlib.resources.is_resource('casaconfig','release_data_readme.txt'):

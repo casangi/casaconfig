@@ -48,35 +48,31 @@ if flags.currentdata:
     if not os.path.exists(measurespath) or not os.path.isdir(measurespath):
         print("No data installed at %s. The measurespath does not exist or is not a directory." % measurespath)
     else:
+        from casaconfig import get_data_info
+        print("current data installed at %s" % measurespath)
+        dataInfo = get_data_info(measurespath)
+        
         # casarundata
-        datareadme = os.path.join(measurespath,'readme.txt')
-        if not os.path.exists(datareadme):
-            print("No casarundata installed in %s (missing readme.txt)." % measurespath)
+        casarunInfo = dataInfo['casarundata']
+        if casarunInfo is None or casarunInfo['version'] == "invalid":
+            print("No casarundata found (missing or unexpected readme.txt contents, not obviously legacy casa data).")
+        elif casarunInfo['version'] == "unknown":
+            print("casarundata version is unknown (probably legacy casa data not maintained by casaconfig).")
         else:
-            try:
-                with open(datareadme, 'r') as fid:
-                    readme = fid.readlines()
-                    currentVersion = readme[1].split(':')[1].strip()
-                    currentDate = readme[2].split(':')[1].strip()
-                    print('casarundata version %s installed on %s' % (currentVersion, currentDate))
-                    if (len(readme)<4):
-                        print('    casarundata appears to be too short, missing list of installed files, casarundata should be repopulated in %s' % measurespath)
-            except:
-                print('There was a problem reading the casarundata readme.txt, casarundata should be repopulated in %s' % measurespath)
-                
+            currentVersion = casarunInfo['version']
+            currentDate = casarunInfo['date']
+            print('casarundata version %s installed on %s' % (currentVersion, currentDate))
+            
         # measures
-        measuresreadme = os.path.join(measurespath,'geodetic/readme.txt')
-        if not os.path.exists(measuresreadme):
-            print("No measures data installed in %s/geodetic (missing readme.txt)." % measurespath)
+        measuresInfo = dataInfo['measures']
+        if measuresInfo is None or casarunInfo['version'] == "invalid":
+            print("No measures data found (missing or unexpected readme.txt, not obviously legaca measures data).")
+        elif measuresInfo['version'] == "unknown":
+            print("measures version is unknown (probably legacy measures data not maintained by casaconfig).")
         else:
-            try:
-                with open(measuresreadme, 'r') as fid:
-                    readme = fid.readlines()
-                    currentVersion = readme[1].split(':')[1].strip()
-                    currentDate = readme[2].split(':')[1].strip()
-                    print('measures version %s installed on %s' % (currentVersion, currentDate))
-            except:
-                print('There was a problem reading the measures readme.txt, measures should be repopulated in %s' % measurespath)
+            currentVersion = measuresInfo['version']
+            currentDate = measuresInfo['date']
+            print('measures version %s installed on %s' % (currentVersion, currentDate))
  
     # ignore any other arguments
 

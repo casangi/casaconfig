@@ -230,6 +230,8 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
                         if not((re.search('geodetic',m.name) and re.search('.old',m.name)) or re.search('Observatories',m.name)):
                             x_list.append(m)
 
+                    # use the 'data' filter if available, revert to previous 'fully_trusted' behavior of not available
+                    ztar.extraction_filter = getattr(tarfile, 'data_filter', (lambda member, path: member))
                     ztar.extractall(path=path,members=x_list)
                     ztar.close()
 

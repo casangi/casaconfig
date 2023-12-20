@@ -91,6 +91,8 @@ def do_pull_data(path, version, installed_files, currentVersion, currentDate, lo
         sys.stdout.flush()
         # also log it
         if logger is not None: logger.post('downloading casarundata contents to %s ...' % path, 'INFO')
+        # use the 'data' filter if available, revert to previous 'fully_trusted' behavior of not available
+        tar.extraction_filter = getattr(tarfile, 'data_filter', (lambda member, path: member))
         tar.extractall(path=path)
         
     print("done", file=sys.stdout)
