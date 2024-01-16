@@ -18,7 +18,7 @@ this module will be included in the api
 
 def measures_available():
     """
-    List available measures versions on ASTRON server
+    List available measures versions on the ASTRON server
 
     This returns a list of the measures files available on the ASTRON
     server. The version parameter of measures_update must be one

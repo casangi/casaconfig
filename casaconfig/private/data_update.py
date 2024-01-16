@@ -19,12 +19,10 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
     """
     Check for updates to the installed casarundata and install the update or change to 
     the requested version when appropriate.
-    
-    A text file (readme.txt at path) records the version string, the date 
-    when that version was installed in path, and the files installed into path. That file
-    must already exist in path in order to use this function. Use pull_data to install
-    casarundata into a new location.
 
+    The path must contain a previously installed version of casarundata.
+    Use pull_data to install casarundata into a new path (empty or does not exist).
+    
     If path is None then config.measurespath is used.
 
     If the version is None (the default) then the most recent version returned by 
@@ -32,15 +30,22 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
 
     If version is "release" then the version associated with the release in 
     the dictionary returned by get_data_info is used. If there is no release
-    version information known then an error message is printed and nothing is
-    updated.
+    version information available to casaconfig then an error message is printed 
+    and nothing is updated. Release version information is only available in
+    monolithic CASA installations.
 
-    If the version requested matches the one in the readme.txt file at path then this function does
-    nothing unless force is True.
+    If a specific version is not requested (the default) **and** the version currently
+    at path was installed today then this function does nothing even if there is a more
+    recent version available from the CASA server. 
 
-    If a specific version is not requested (the default) and the date in the readme.txt file
-    at path is today, then this function does nothing unless force is True even if there is a more
-    recent version available from the CASA server.
+    If force is True then the requested version is installed even if that version
+    is already installed or a version was previously installed today (there may be a
+    newer version available).
+
+    A text file (readme.txt at path) records the version string, the date 
+    when that version was installed in path, and the files installed into path. That file
+    must already exist in path in order to use this function. Use pull_data to install
+    casarundata into a new location.
 
     When auto_update_rules is True then path must be owned by the user, force must be
     False and the version must be None. This is used during casatools initialization when
@@ -49,9 +54,12 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
 
     If an update is to be installed the previously installed files, as listed in the 
     readme.txt file at path, are removed before the contents of the version 
-    being installed are unpacked. This includes the set of measures tables
-    that are part of that casarundata version. A data update is typically followed by a
-    measures_update to ensure that the most recent measures data are installed.
+    being installed are unpacked. If the measures contents of path have been updated since
+    the previously installed version of casarundata then those updates will also be removed
+    by this data update while preparing to install the requested version of casarundata (which
+    includes a copy of the measures data that is likely older than today). A data update is 
+    typically followed by a measures_update to ensure that the most recent measures data 
+    are installed.
 
     A file lock is used to prevent more that one data update (pull_data, measures_update,
     or data_update) from updating any files in path at the same time. When locked, the 
@@ -59,16 +67,17 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
     has the lock. When data_update gets the lock it checks the readme.txt file in path
     to make sure that an update is still necessary (if force is True then an update 
     always happens). If the lock file is not empty then a previous update of path (pull_data,
-    data_update, or measures_update) did not exit as expected and the contents of path are
-    suspect. In that case, an error will be reported and nothing will be updated. The lock
-    file can be checked to see the details of when that file was locked. The lock file can be
-    removed and data_update can be tried again. It may be safest in that case to remove path
-    completely or use a different path and use pull_data to install a fresh copy of the
-    desired version.
+    data_update, or measures_update) did not exit as expected or is still in process (via a
+    separate instance of CASA) and the contents of path may be suspect. In that case, 
+    an error will be reported and nothing will be updated. The lock file can be checked to 
+    see the details of when that file was locked. The lock file can be removed and data_update 
+    can be tried again. It may be safest in that case to remove path completely or use a
+    different path and use pull_data to install a fresh copy of the desired version.
 
     Some of the tables installed by data_update are only read when casatools starts. Use of 
-    data_update should typically be followed by a restart of CASA so that any changes are seen by
-    the tools and task that use this data.
+    data_update except during CASA startup by the auto update proess  should typically be 
+    followed by a restart of CASA so that any changes are seen by the tools and tasks that 
+    use this data.
 
     **Note:** data_update requires that the expected readme.txt file already exists at the top-level
     directory at path. If the file does not exist or can not be interpreted as expected then
@@ -100,7 +109,6 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
     from .get_data_lock import get_data_lock
     from .do_pull_data import do_pull_data
     from .get_data_info import get_data_info
-    from .read_readme import read_readme
 
     if path is None:
         from .. import config as _config
@@ -125,15 +133,13 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
             print_log_messages('path must exist as a directory and it must be owned by the user when auto_update_rules is True', logger, True)
             return        
 
-    # readme must exist
     if not os.path.exists(readme_path):
         print_log_messages('No readme.txt file found at path. Nothing updated or checked.', logger, True);
         return
 
     # path must be writable with execute bit set
     if (not os.access(path, os.W_OK | os.X_OK)) :
-        print('No permission to write to path, cannot update : %s' % path, file=sys.stdout)
-        if logger is not None: logger.post('No permission to write to path, cannot update : %s' % path, 'ERROR')
+        print_log_messages('No permission to write to path, cannot update : %s' % path, logger, True)
         return
     
     # try and digest the readme file
@@ -141,16 +147,23 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
     installed_files = []
     currentVersion = []
     currentDate = []
-    dataReadmeInfo = read_readme(readme_path)
-    if dataReadmeInfo is not None:
-        currentVersion = dataReadmeInfo['version']
-        currentDate = dataReadmeInfo['date']
-        installed_files = dataReadmeInfo['extra']
-    else:
+    
+    dataReadmeInfo = get_data_info(path, logger, type='casarundata')
+    
+    if dataReadmeInfo is None or dataReadmeInfo['version'] == 'invalid':
         print_log_messages('The readme.txt file at path could not be read as expected', logger, True)
         print_log_messages('choose a different path or empty this  path and try again using pull_data', logger, True)
         # no lock has been set yet, safe to simply return here
         return
+
+    currentVersion = dataReadmeInfo['version']
+    currentDate = dataReadmeInfo['date']
+    installed_files = dataReadmeInfo['manifest']
+
+    if currentVersion is 'unknown':
+        print_log_messages('The data update path appears to be casarundata but no readme.txt file was found', logger, False)
+        print_log_messages('A data update is not possible but CASA use of this data may be OK.', logger, False)
+        print_log_messages('casaconfig must first install the casarundata in path for data_update to run as expected on that path', logger, False)
 
     if (len(installed_files) == 0):
         # this shouldn't happen
@@ -192,16 +205,13 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
         if expectedMeasuresVersion is not None:
             # the 'release' version has been requested, need to check the measures version
             # assume a force is necessary until the measures version is known to be OK
-            force = True
-            measures_readme_path = os.path.join(path,'geodetic/readme.txt')
-            if os.path.exists(measures_readme_path):
-                measuresReadmeInfo = read_readme(measures_readme_path)
-                if measuresReadmeInfo is not None:
-                    measuresVersion = measuresReadmeInfo['version']
-                    if measuresVersion == expectedMeasuresVersion:
-                        # it's OK, do not force
-                        force = False
-                # if measuresReadmeInfo is None then that's a problem and force remains True
+            measuresReadmeInfo = get_data_info(path, logger, type='measures')
+            if measuresReadmeInfo is not None:
+                measuresVersion = measuresReadmeInfo['version']
+                if measuresVersion == expectedMeasuresVersion:
+                    # it's OK, do not force
+                    force = False
+                # if measuresReadmeInfo is None then that's a problem and force remains True, this also catches 'invalid' and 'unknown' measures versions, which should not happen here
             if not force:
                 print_log_messages('data_update requested "release" version of casarundata and measures are already installed.', logger)
                 # no lock has been set yet, safe to simply return here
@@ -229,22 +239,20 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
 
         do_update = True
         # it's possible that another process had path locked and updated the readme with new information, re-read it
-        dataReadmeInfo = read_readme(readme_path)
+        dataReadmeInfo = get_data_info(path, logger, type='casarundata')
         if dataReadmeInfo is not None:
             currentVersion = dataReadmeInfo['version']
             currentDate = dataReadmeInfo['date']
-            installedFiles = dataReadmeInfo['extra']
+            installedFiles = dataReadmeInfo['manifest']
             if ((currentVersion == requestedVersion) and (not force)):
                 if expectedMeasuresVersion is not None:
                     # this is a 'release' update request, need to check that the measures version is also now OK
-                    measures_readme_path = os.path.update(path,'geodetic/readme.txt')
-                    if os.path.exists(measures_readme_path):
-                        measuresReadmeInfo = read_readme(measures_readme_path)
-                        if measuresReadmeInfo is not None:
-                            measuresVersion = measuresReadmeInfo['version']
-                            if measuresVersion == expectedMeasuresVersion:
-                                do_update = False
-                        # if measuresReadmeInfo is None there was a problem which requires a full update so do_update remains True
+                    measuresReadmeInfo = get_data_info(path, logger, type='measures')
+                    if measuresReadmeInfo is not None:
+                        measuresVersion = measuresReadmeInfo['version']
+                        if measuresVersion == expectedMeasuresVersion:
+                            do_update = False
+                    # if measuresReadmeInfo is None there was a problem which requires a full update so do_update remains True
                     if not do_update:
                         print_log_messages('data update requested "release" version of casarundata and measures are already installed.', logger)
                 else:
@@ -267,7 +275,6 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
             print_log_messages('This should not happen unless multiple sessions are trying to update at the same time and one experienced problems or was done out of sequence', logger, True)
             print_log_messages('Check for other updates in process or choose a different path or clear out this path and try again using pull_data or update_all', logger, True)
 
-    
         if do_update:
             do_pull_data(path, requestedVersion, installed_files, currentVersion, currentDate, logger)
 

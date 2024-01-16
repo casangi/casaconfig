@@ -19,7 +19,7 @@ def get_data_lock(path, fn_name):
     If path does not already exist and the lock file is not empty then a lock
     is not set and the returned value is None.
 
-    When a lock is set the lock file will contain the user, hostnames, pid,
+    When a lock is set the lock file will contain the user, hostname, pid,
     date, and time.
 
     The opened file descriptor holding the lock is returned.

@@ -15,7 +15,7 @@
 def do_pull_data(path, version, installed_files, currentVersion, currentDate, logger):
     """
     Pull the casarundata for the given version and install it in path, removing
-    the isntalled files and updating the readme.txt file when done.
+    the installed files and updating the readme.txt file when done.
 
     This function is used by both pull_data and data_update when each has
     determind that the desired version should be installed. The calling function
@@ -79,10 +79,15 @@ def do_pull_data(path, version, installed_files, currentVersion, currentDate, lo
         remove_empty_dirs(path)
 
     # okay, safe to install the requested version
-            
-    dataURL = os.path.join('https://casa.nrao.edu/download/casaconfig/data',version)
+
+    goURL = 'https://go.nrao.edu/casarundata'
     context = ssl.create_default_context(cafile=certifi.where())
-    with urllib.request.urlopen(dataURL, context=context, timeout=400) as tstream, tarfile.open(fileobj=tstream, mode='r:gz') as tar :
+
+    # need to first resolve the go.nrao.edu URL to find the actual data URL
+    dataURLroot = urllib.request.urlopen(goURL, context=context).url
+    dataURL = os.path.join(dataURLroot, version)
+    
+    with urllib.request.urlopen(dataURL, context=context, timeout=400) as tstream, tarfile.open(fileobj=tstream, mode='r|*') as tar :
         l = int(tstream.headers.get('content-length', 0))
         sizeString = "unknown size"
         if (l>0): sizeString = ("%.0fM" % (l/(1024*1024)))

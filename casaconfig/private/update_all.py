@@ -52,6 +52,7 @@ def update_all(path=None, logger=None):
     import os
 
     from .print_log_messages import print_log_messages
+    from .get_data_info import get_data_info
     from .pull_data import pull_data
     from .data_update import data_update
     from .measures_update import measures_update
@@ -86,9 +87,22 @@ def update_all(path=None, logger=None):
             print_log_messages("pull_data failed, see the error messages for more details. update_all can not continue")
             return
 
-    # readme.txt must exist in path at this point
-    if not os.path.exists(os.path.join(path, 'readme.txt')):
+    # readme.txt must exist in path at this point, using get_data_info provides more possible feedback
+    dataInfo = get_data_info(path, logger)
+    if dataInfo is None:
+        # this should not happen
+        print_log_messages('could not find any data information about %s, can not continue with update_all' % path, logger, True)
+
+    if dataInfo['casarundata'] is None:
         print_log_messages('readme.txt not found at path, update_all can not continue, path = %s' % path, logger)
+        return
+
+    if dataInfo['casarundata'] is 'invalid':
+        print_log_messages('readme.txt is invalid at path, update_all can not continue, path = %s' % path, logger)
+        return
+
+    if dataInfo['casarundata'] is 'unknown':
+        print_log_messages('contents at path appear to be casarundata but no readme.txt was found, casaconfig did not populate this data and update_all can not continue, path = %s', path, logger)
         return
 
     # the updates should work now

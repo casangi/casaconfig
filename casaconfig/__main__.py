@@ -84,20 +84,16 @@ else:
     else:
         # the update options, update all does everything, no need to invoke anything else
         if flags.updateall:
-            print("data_update then measures_update using path=%s" % measurespath)
             casaconfig.update_all(measurespath)
         else:
             # do any pull_update first
             if flags.pulldata:
-                print("pull_data using path=%s" % measurespath)
                 casaconfig.pull_data(measurespath)
             # then data_update, not necessary if pull_data just happened
             if flags.dataupdate and not flags.pulldata:
-                print("data_update using path=%s" % measurespath)
                 casaconfig.data_update(measurespath)
             # then measures_update
             if flags.measuresupdate:
-                print("measures_update using path=%s" % measurespath)
                 casaconfig.measures_update(measurespath)
 
 sys.exit(0)

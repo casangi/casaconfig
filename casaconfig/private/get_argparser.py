@@ -15,6 +15,7 @@
 ## get an argparse.ArgumentParser suitable for parsing the configurable
 ## parameters known to casa, help is turned off here but can be turned on in the returned parser
 ## this parser includes the arguments used by casaconfig, additional arguments can be added
+## this is known to be used by the casaconfig command line as well as by casashell
 
 def get_argparser(add_help=False):
     import argparse as __argparse
@@ -22,7 +23,7 @@ def get_argparser(add_help=False):
     ## look for arguments affecting the configuration
     parser = __argparse.ArgumentParser(add_help=add_help)
     parser.add_argument( "--configfile",dest='configfile', default='~/.casa/config.py',
-                         help='location of the user configuration file')
+                         help='path to the user configuration file')
     parser.add_argument( "--noconfig", dest='noconfig', action='store_const', const=True, default=False,
                          help='do not load user configuration file' )
     parser.add_argument( "--nositeconfig", dest='nositeconfig', action='store_const', const=True, default=False,

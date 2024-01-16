@@ -17,16 +17,16 @@ this module will be included in the api
 
 def measures_update(path=None, version=None, force=False, logger=None, auto_update_rules=False):
     """
-    Retrieve IERS data used for measures calculations from ASTRON server
+    Retrieve IERS data used for measures calculations from the ASTRON server
     
-    Original data source is here: https://www.iers.org/IERS/EN/DataProducts/data.html
+    Original data source used by ASTRON is here: https://www.iers.org/IERS/EN/DataProducts/data.html
 
     CASA maintains a separate Observatories table which is available in the casarundata
     collection through pull_data and data_update. The Observatories table found at ASTRON
     is not installed by measures_update and any Observatories file at path will not be changed
     by using this function.
 
-    A text file (readme.txt in the geodetic directory in path) records the version string
+    A text file (readme.txt in the geodetic directory in path) records the measures version string
     and the date when that version was installed in path.
 
     If path is None then config.measurespath is used.
@@ -38,10 +38,11 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     is today, then this function does nothing unless force is True even if there is a more
     recent version available from the ASTRON server.
 
-    When auto_update_rules is True then path must be owned by the user, force must be False,
-    and the version must be None. This is used during casatools initialization when 
-    measures_auto_update is True. Automatic updating happens during casatools initialization
-    so that the updated measures are in place before any tool needs to use them.
+    When auto_update_rules is True then path must exist and contain the expected readme.txt file.
+    Path must be owned by the user, force must be False, and the version must be None. This 
+    option is used during casatools initialization when measures_auto_update is True. Automatic 
+    updating happens during casatools initialization so that the updated measures are in place 
+    before any tool needs to use them.
 
     Using measures_update after casatools has started should always be followed by exiting 
     and restarting casa (or the casatools module if modular casa components are being used).
@@ -71,13 +72,25 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     unpredictable. Avoid multiple, simultanous updates outside of the automatic
     update process.
 
-    **Note:** measures_update requires that the expected readme.txt file already exists in
-    the geodetic directory at path. If that file does not exist or can not be interpreted as
-    expected then measures_update will return without updating any data.
+    **Note:** during auto updates, measures_update requires that the expected 
+    readme.txt file already exists in the geodetic directory at path. If that file does 
+    not exist or can not be interpreted as expected then measures_update will 
+    return without updating any data.
 
     **Note:** if auto_update_rules is True the user must own path (in addition to having 
     read and write permissions there). The version must then also be None and the force option 
     must be False.
+
+    **Note::** During use outside of auto updates, if path does not exist it will be created
+    by this function.
+
+    **Notes::** During use outside of auto updates, if the readme.txt file exists but can not
+    be read as expected **OR** that file does not exist but the contents of path appear to
+    contain measures data (table names in the expected locations) then this function will
+    print messages describing that and exit without changing anything at path. Using
+    a force value of True will disable this check and install measures at path even if path
+    is not empty or the readme.txt file can not be read. This use of force should be used
+    with caution.
 
 
     Parameters
@@ -106,7 +119,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
 
     from .print_log_messages import print_log_messages
     from .get_data_lock import get_data_lock
-    from .read_readme import read_readme
+    from .get_data_info import get_data_info
     
     if path is None:
         from .. import config as _config
@@ -140,18 +153,26 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
 
     # first, does this look like it needs to be updated
 
-    # if measures are already preset, get their version
-    readme_path = os.path.join(path,'geodetic/readme.txt')
-    if os.path.exists(readme_path):
-        readmeInfo = read_readme(readme_path)
-        if readmeInfo is not None:
-            current = readmeInfo['version']
-            updated = readmeInfo['date']
+    # get any existing measures readme information
+    readmeInfo = get_data_info(path, logger, type='measures')
+    if readmeInfo is not None:
+        current = readmeInfo['version']
+        updated = readmeInfo['date']
 
-    # don't re-download the same data
     if not force:
+        # don't re-download the same data
         if ((version is not None) and (version == current)) or ((version is None) and (updated == today_string)):
             print_log_messages('measures_update current measures detected in %s, using version %s' % (path, current), logger)
+            return
+        
+        # don't overwrite something that looks bad unless forced to do so
+        if current == 'invalid':
+            print_log_messages('the measures readme.txt file could not be read as expected, an update can not proceed unless force is True', logger, True)
+            return
+
+        # don't overwrite something that looks like valid measures data unless forced to do so
+        if current == 'unknown':
+            print_log_messages('The measures data at %s is not maintained by casaconfig and so it can not be updated unless force is True' % path, logger, True)
             return
 
     # path must be writable with execute bit set
@@ -181,16 +202,22 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
             # recheck the readme file, another update may have already happened before the lock was obtained
             current = None
             updated = None
-            if os.path.exists(readme_path):
-                readmeInfo = read_readme(readme_path)
-                if readmeInfo is not None:
-                    current = readmeInfo['version']
-                    updated = readmeInfo['date']
+            readmeInfo = get_data_info(path, logger, type='measures')
+            if readmeInfo is not None:
+                current = readmeInfo['version']
+                updated = readmeInfo['date']
 
             if ((version is not None) and (version == current)) or ((version is None) and (updated == today_string)):
                 # no update will be done, version is as requested or it's already been updated today
                 print_log_messages('measures_update current measures detected in %s, using version %s' % (path, current), logger)
             else:
+                if not force and readmeInfo is not None and (version=='invalid' or version=='unknown'):
+                    # at this point, this indicates something is unexpectedly wrong, do not continue
+                    print_log_messages('Something unexpected has changed in the measures path location, and measures_update can not continue', logger, True)
+                    print_log_messages('a previous measures_update may have exited unexpectedly', logger, True)
+                    print_log_messages('It may be necessary to reinstall the casarundata as well as the measures data if %s is the correct path' % path, logger, True)
+                    # update is already turned off, the lock file will be cleaned up on exit
+                    
                 # an update is needed
                 do_update = True
 
@@ -212,6 +239,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
 
             else:
                 # there are files to extract, remove the readme.txt file in case this dies unexpectedly
+                readme_path = os.path.join(path,'geodetic/readme.txt')
                 if os.path.exists(readme_path):
                     os.remove(readme_path)
     

@@ -29,31 +29,40 @@ def pull_data(path=None, version=None, force=False, logger=None):
     If version is "release" then the version associated with the release in 
     the dictionary returned by get_data_info is used. If there is no release
     version information known then an error message is printed and nothing is
-    updated.
+    checked or installed.
+
+    If force is True then the requested version is installed even if that
+    version is already installed.
+
+    Results and errors are always printed. They are also logged to the logger
+    if available.
 
     A text file (readme.txt at path) records the version string, the date
     when that version was installed in path, and the files installed into path.
     This file is used to determine if the contents are a previously installed 
-    version.
+    version. If path is not empty then this file must exist with the expected
+    contents in order for pull_data to proceed.
 
-    If the version to be pulled matches the version in the readme.txt file then this 
-    function does nothing unless force is true. No error messages will result when the
+    If the version to be pulled matches the version in the readme.txt file then 
+    pull_data does nothing unless force is True. No error messages will result when the
     version already matches what was previously installed (no installation is then
     necessary unless force is True).
 
-    The measures tables included in casarundata will typically 
-    not be the most recent version. To get the most recent measures data, measures_update
+    The measures tables included in casarundata will typically not be the most 
+    recent version. To get the most recent measures data, measures_update
     should be used after pull_data.
 
     If path contains a previously installed version then all of the files listed in 
-    the manifest part of the readme.txt file are first removed from path.
+    the manifest part of the readme.txt file are first removed from path. This ensures
+    that files not present in the version being installed are removed in moving to the
+    other version.
 
     A file lock is used to prevent more than one data update (pull_data, measures_update,
     or data_update) from updating any files in path at the same time. When locked, the
     lock file (data_update.lock in path) contains information about the process that
     has the lock. When pull_data gets the lock it checks the readme.txt file in path
-    to make sure that a copy of the data should be pulled (the version doesn't match what
-    was requested). If force is True an update always happens. If the lock file is not
+    to make sure that a copy of the data should still be pulled (the version doesn't 
+    match what was requested, or force is True). If the lock file is not
     empty then a previous update of path (pull_data, data_update, or measures_update)
     did not exit as expected and the contents of path are suspect. In that case, pull_data
     will report that as an error and nothing will be updated. The lock file can be checked
@@ -63,13 +72,13 @@ def pull_data(path=None, version=None, force=False, logger=None):
     a fresh copy of the desired version.
 
     Some of the tables installed by pull_data are only read when casatools starts. Use of 
-    pull_data should typically be followed of CASA by a restart so that 
+    pull_data should typically be followed by a restart of CASA so that 
     any changes are seen by the tools and tasks that use this data.
 
     Parameters
        - path (str) - Folder path to place casarundata contents. It must be empty or not exist or contain a valid, previously installed version. If not set then config.measurespath is used.
        - version (str=None) - casadata version to retrieve. Default None gets the most recent version.
-       - force (bool=False) - If True, re-download the data even when the requested version matches what is already installed. Default False will not download data if the installed version matches the requested version.
+       - force (bool=False) - If True, re-download and install the data even when the requested version matches what is already installed. Default False will not download data if the installed version matches the requested version.
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Messages are always written to the terminal. Default None does not write any messages to a logger.
 
     Returns
@@ -84,7 +93,6 @@ def pull_data(path=None, version=None, force=False, logger=None):
     from .get_data_lock import get_data_lock
     from .do_pull_data import do_pull_data
     from .get_data_info import get_data_info
-    from .read_readme import read_readme
 
     if path is None:
         from .. import config as _config
@@ -106,44 +114,48 @@ def pull_data(path=None, version=None, force=False, logger=None):
     # attempt a pull if path does not exist or is empty:
     do_pull = (not os.path.exists(path)) or (len(os.listdir(path))==0)
     if not do_pull:
-        # if the readme_path exists, find the current version, install date, and installed files
-        if os.path.exists(readme_path):
-            readmeInfo = read_readme(readme_path)
-            if readmeInfo is not None:
-                currentVersion = readmeInfo['version']
-                currentDate = readmeInfo['date']
-                installed_files = readmeInfo['extra']
-            else:
-                print_log_messages('destination path is not empty and the readme.txt file found there could not be read as expected', logger, True)
-                print_log_messages('choose a different path or empty this path and try again', logger, True)
-                # no lock has been set yet, safe to simply return here
-                return
+        # find the current version, install date, and installed files
+        readmeInfo = get_data_info(path, logger, type='casarundata')
+        # the only way readmeInfo is None is if path does not exist or is empty, which we already know is not the case
+        currentVersion = readmeInfo['version']
+        currentDate = readmeInfo['date']
+        installed_files = readmeInfo['manifest']
 
-            if (len(installed_files) == 0):
-                # this shouldn't happen
-                print_log_messages('destination path is not empty and the readme.txt file found there did not contain the expected list of installed files', logger, True)
-                print_log_messages('choose a different path or empty this path and try again', logger, True)
-                # no lock as been set yet, safe to simply return here
-                return
-            
-            # the readme file looks as expected, pull if the version is different or force is true
-            if version is None:
-                # use most recent available
-                available_data = data_available()
-                version = available_data[-1]
-            do_pull = (version!=currentVersion) or force
-
-            if not do_pull:
-                # it's already at the expected version and force is False, nothing to do
-                # safe to return here, no lock has been set
-                return
-        else:
-            # path exists and is not empty
-            print_log_messages('destination path exists, is not empty, and does not contain the expected readme.txt file', logger, True)
+        if currentVersion == 'invalid':
+            print_log_messages('destination path is not empty and this does not appear to be casarundata OR the readme.txt file found there could not be read as expected', logger, True)
             print_log_messages('choose a different path or empty this path and try again', logger, True)
             # no lock has been set yet, safe to simply return here
             return
 
+        if currentVersion == 'unknown':
+            print_log_messages('destination path appears to be casarundata but no readme.txt file was found', logger, False)
+            print_log_messages('no data will be installed but CASA use of this data may be OK. Choose a different path or delete this path to install new casarundata.', logger, False)
+            if force:
+                print_log_messages('force is True but there is no readme.txt found and the location is not empty, no data will be installed', logger, True);
+                print_log_messages('Choose a different path or empty this path to install new casarundata', logger, True)
+            # no lock as been set yet, safe to simply return here
+            return
+
+        if (len(installed_files) == 0):
+            # this shouldn't happen
+            print_log_messages('destination path is not empty and the readme.txt file found there did not contain the expected list of installed files', logger, True)
+            print_log_messages('choose a different path or empty this path and try again', logger, True)
+            # no lock as been set yet, safe to simply return here
+            return
+            
+        # the readme file looks as expected, pull if the version is different or force is true
+        if version is None:
+            # use most recent available
+            available_data = data_available()
+            version = available_data[-1]
+
+        do_pull = (version!=currentVersion) or force
+
+        if not do_pull:
+            # it's already at the expected version and force is False, nothing to do
+            # safe to return here, no lock has been set
+            return
+        
     # a pull will happen, unless the version string is not available
 
     if available_data is None:
@@ -164,7 +176,7 @@ def pull_data(path=None, version=None, force=False, logger=None):
         expectedMeasuresVersion = releaseInfo['measures']
 
     if version not in available_data:
-        print_log_messages('version %s not found on CASA server, use casaconfig.data_available for a list of casarundata versions' % version, logger, True)
+        print_log_messages('version %s not found on CASA server, use casaconfig.data_available() for a list of casarundata versions' % version, logger, True)
         return
 
     if not os.path.exists(path):
@@ -186,10 +198,10 @@ def pull_data(path=None, version=None, force=False, logger=None):
             return
         
         do_pull = True
-        if not force and os.path.exists(readme_path):
-            # the readme file needs to be reread here
+        if not force:
+            # need to recheck any readme file that may be present here
             # it's possible that another process had path locked and updated the readme file with new information
-            readmeInfo = read_readme(readme_path)
+            readmeInfo = get_data_info(path, logger, type='casarundata')
             if readmeInfo is not None:
                 currentVersion = readmeInfo['version']
                 currentDate = readmeInfo['date']
@@ -198,24 +210,23 @@ def pull_data(path=None, version=None, force=False, logger=None):
                         # this is a release pull and the measures version must also match
                         # start off assuming a pull is necessary
                         do_pull = True
-                        measures_readme_path = os.path.join(path,'geodetic/readme.txt')
-                        if os.path.exists(measures_readme_path):
-                            measuresReadmeInfo = read_readme(measures_readme_path)
-                            if measuresReadmeInfo is not None:
-                                measuresVersion = measuresReadmeInfo['version']
-                                if measuresVersion == expectedMeasuresVersion:
-                                    # no pull is necessary
-                                    do_pull = False
-                                    print_log_messages('pull_data requested "release" versions of casarundata and measures are already installed.', logger)
-                            # otherwise the measures readme info is suspect and the pull should happen
+                        measuresReadmeInfo = get_data_info(path, logger, type='measures')
+                        if measuresReadmeInfo is not None:
+                            measuresVersion = measuresReadmeInfo['version']
+                            if measuresVersion == expectedMeasuresVersion:
+                                # no pull is necessary
+                                do_pull = False
+                                print_log_messages('pull_data requested "release" versions of casarundata and measures are already installed.', logger)
+                            # otherwise this is a release pull and even if the measuresVersion is 'unknown' or 'invalid' we should proceed with a pull at this point
+                            # problems with casarundata path will have been caught before
                     else:
-                        # nothing to do here, already at the expected version and a pull is not being forced
+                        # nothing to do here, already at the expected casarundata version and a pull is not being forced and this is not a release pull
                         do_pull = False
                         print_log_messages('pull_data requested version is already installed.', logger)
 
                 if do_pull:
                     # make sure the copy of installed_files is the correct one
-                    installed_files = readmeInfo['extra']
+                    installed_files = readmeInfo['manifest']
                     if len(installed_files) == 0:
                         # this shoudn't happen, do not do a pull
                         do_pull = False

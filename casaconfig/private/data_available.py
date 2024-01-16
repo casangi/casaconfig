@@ -15,10 +15,9 @@
 this module will be included in the api
 """
 
-
 def data_available():
     """
-    List available casarundata versions on CASA server
+    List available casarundata versions on CASA server at https://go.nrao.edu/casarundata
 
     This returns a list of the casarundata versions available on the CASA
     server. The version parameter of data_update must be one
@@ -26,7 +25,9 @@ def data_available():
     in this list is used).
 
     A casarundata version is the filename of the tarball and look 
-    like "casarundata.x.y.z.tar.gz"
+    like "casarundata.x.y.z.tar.*" (different compressions may be used by CASA without
+    changing casaconfig functions that use those tarballs). The full filename is
+    the casarundata version expected in casaconfig functions.
 
     Parameters
        None
@@ -50,15 +51,15 @@ def data_available():
             if tag == 'a':
                 for (name, value) in attrs:
                     # only care if this is an href and the value starts with
-                    # casarundata and ends with tar.gz
-                    if name == 'href' and (value[:11] == 'casarundata' and value[-6:] == 'tar.gz'):
+                    # casarundata and has '.tar.' somewhere later
+                    if name == 'href' and (value.startswith('casarundata') and (value.rfind('.tar')>11)):
                         # only add it to the list if it's not already there
                         if (value not in self.rundataList):
                             self.rundataList.append(value)
 
     try:
         context = ssl.create_default_context(cafile=certifi.where())
-        with urllib.request.urlopen('https://casa.nrao.edu/download/casaconfig/data/', context=context, timeout=400) as urlstream:
+        with urllib.request.urlopen('https://go.nrao.edu/casarundata/', context=context, timeout=400) as urlstream:
             parser = LinkParser()
             encoding = urlstream.headers.get_content_charset() or 'UTF-8'
             for line in urlstream:

@@ -23,11 +23,12 @@ def do_auto_updates(configDict, logger=None):
     This is intended for use during casatools init but may be useful in other cases.
 
     Note that the IERS measures data is usually read when casatools starts and so 
-    changes made to that table may not be seen until a new session.
+    changes made to that table may not be seen until a new session if this function
+    is used outside of casatools initialization.
 
     measurespath must be set (not None).
 
-    measures_auto_update must be True when data_auto_update is True
+    measures_auto_update must be True when data_auto_update is True.
 
     See the documentation for data_update and measures_update for additional details
     about the auto update rules.
