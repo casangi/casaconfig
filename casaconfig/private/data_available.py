@@ -51,8 +51,8 @@ def data_available():
             if tag == 'a':
                 for (name, value) in attrs:
                     # only care if this is an href and the value starts with
-                    # casarundata and has '.tar.' somewhere later
-                    if name == 'href' and (value.startswith('casarundata') and (value.rfind('.tar')>11)):
+                    # casarundata and has '.tar.' somewhere later and does not end in .md5
+                    if name == 'href' and (value.startswith('casarundata') and (value.rfind('.tar')>11) and (value[-4:] != '.md5')):
                         # only add it to the list if it's not already there
                         if (value not in self.rundataList):
                             self.rundataList.append(value)

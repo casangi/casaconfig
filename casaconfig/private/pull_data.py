@@ -75,6 +75,10 @@ def pull_data(path=None, version=None, force=False, logger=None):
     pull_data should typically be followed by a restart of CASA so that 
     any changes are seen by the tools and tasks that use this data.
 
+    **Note:** When version is None (the default), data_available is always used to find out
+    what versions are available. There is no check on when the data were last updated before
+    calling data_available (as there is in the two update functions). 
+
     Parameters
        - path (str) - Folder path to place casarundata contents. It must be empty or not exist or contain a valid, previously installed version. If not set then config.measurespath is used.
        - version (str=None) - casadata version to retrieve. Default None gets the most recent version.
@@ -111,12 +115,11 @@ def pull_data(path=None, version=None, force=False, logger=None):
     currentVersion = None
     currentDate = None
     
-    # attempt a pull if path does not exist or is empty:
-    do_pull = (not os.path.exists(path)) or (len(os.listdir(path))==0)
+    # attempt a pull if path does not exist or is empty (except for any lock file, handled later)
+    readmeInfo = get_data_info(path, logger, type='casarundata')
+    do_pull = readmeInfo is None
     if not do_pull:
         # find the current version, install date, and installed files
-        readmeInfo = get_data_info(path, logger, type='casarundata')
-        # the only way readmeInfo is None is if path does not exist or is empty, which we already know is not the case
         currentVersion = readmeInfo['version']
         currentDate = readmeInfo['date']
         installed_files = readmeInfo['manifest']
@@ -131,15 +134,17 @@ def pull_data(path=None, version=None, force=False, logger=None):
             print_log_messages('destination path appears to be casarundata but no readme.txt file was found', logger, False)
             print_log_messages('no data will be installed but CASA use of this data may be OK. Choose a different path or delete this path to install new casarundata.', logger, False)
             if force:
-                print_log_messages('force is True but there is no readme.txt found and the location is not empty, no data will be installed', logger, True);
+                print_log_messages('force is True but there is no readme.txt found and the location is not empty, no data will be installed', logger, True)
                 print_log_messages('Choose a different path or empty this path to install new casarundata', logger, True)
             # no lock as been set yet, safe to simply return here
             return
 
-        if (len(installed_files) == 0):
+        if (installed_files is None or len(installed_files) == 0):
             # this shouldn't happen
+            print('')
             print_log_messages('destination path is not empty and the readme.txt file found there did not contain the expected list of installed files', logger, True)
             print_log_messages('choose a different path or empty this path and try again', logger, True)
+            print('')
             # no lock as been set yet, safe to simply return here
             return
             
@@ -191,10 +196,12 @@ def pull_data(path=None, version=None, force=False, logger=None):
         lock_fd = get_data_lock(path, 'pull_data')
         # if lock_fd is None it means the lock file was not empty - because we know that path exists at this point
         if lock_fd is None:
+            print('')
             print_log_messages('The lock file at %s is not empty.' % path, logger, True)
             print_log_messages('A previous attempt to update path may have failed or exited prematurely.', logger, True)
-            print_log_messages('It may be best to do a fresh pull_data on that location.', logger, True)
             print_log_messages('Remove the lock file and set force to True with the desired version (default to the most recent).', logger, True)
+            print_log_messages('It may be best to clean out that location and do a fresh pull_data.', logger, True)
+            print('')
             return
         
         do_pull = True
@@ -205,6 +212,9 @@ def pull_data(path=None, version=None, force=False, logger=None):
             if readmeInfo is not None:
                 currentVersion = readmeInfo['version']
                 currentDate = readmeInfo['date']
+                print('readmeInfo is not None')
+                print('currentVersion : %s' % currentVersion)
+                print('currentDate : %s' % currentDate)
                 if ((currentVersion == version) and (not force)):
                     if expectedMeasuresVersion is not None:
                         # this is a release pull and the measures version must also match
@@ -224,21 +234,28 @@ def pull_data(path=None, version=None, force=False, logger=None):
                         do_pull = False
                         print_log_messages('pull_data requested version is already installed.', logger)
 
+                # a version of 'invalid', 'error', or 'unknown' is a surprise here, likely caused by something else doing something
+                # incompatible with this attempt
+                if version in ['invalid','error','unknown']:
+                    do_pull = False
+                    print('')
+                    print_log_messages('Unexpected version or problem found in readme.txt file during pull_data, can not safely pull the requested version', logger, True)
+                    print_log_messages('This should not happen unless multiple sessions are trying to pull_data at the same time and one experienced problems or was done out of sequence', logger, True)
+                    print('')
+                    
+
                 if do_pull:
                     # make sure the copy of installed_files is the correct one
                     installed_files = readmeInfo['manifest']
                     if len(installed_files) == 0:
                         # this shoudn't happen, do not do a pull
                         do_pull = False
+                        print('')
                         print_log_messages('destination path is not empty and the readme.txt file found there did not contain the expected list of installed files', logger, True)
                         print_log_messages('This should not happen unless multiple sessions are trying to pull_data at the same time and one experienced problems or was done out of sequence', logger, True)
-                        print_log_messages('Check for other updates in process or choose a different path or clear out this path and try again', logger, True)                    
-            else:
-                # this shouldn't happen, do not do a pull
-                do_pull = False
-                print_log_messages('Unexpected error reading readme.txt file during pull_data, can not safely pull the requested version', logger, True)
-                print_log_messages('This should not happen unless multiple sessions are trying to pull_data at the same time and one experienced problems or was done out of sequence', logger, True)
-                
+                        print_log_messages('Check for other updates in process or choose a different path or clear out this path and try again', logger, True)
+                        print('')
+
         if do_pull:
             do_pull_data(path, version, installed_files, currentVersion, currentDate, logger)
                         
@@ -246,8 +263,10 @@ def pull_data(path=None, version=None, force=False, logger=None):
         lock_fd.truncate(0)
         
     except Exception as exc:
+        print('')
         print_log_messages('ERROR! : Unexpected exception while populating casarundata version %s to %s' % (version, path), logger, True)
         print_log_messages('ERROR! : %s' % exc, logger, True)
+        print()
         # leave the contents of the lock file as is to aid in debugging
         # import traceback
         # traceback.print_exc()

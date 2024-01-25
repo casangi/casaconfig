@@ -49,7 +49,7 @@ def do_pull_data(path, version, installed_files, currentVersion, currentDate, lo
     
     readme_path = os.path.join(path, 'readme.txt')
 
-    if (len(installed_files) > 0):
+    if (installed_files is not None and len(installed_files) > 0):
         # remove the previously installed files
         # remove this readme file so it's not confusing if something goes wrong after this
         os.remove(readme_path)

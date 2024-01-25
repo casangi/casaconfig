@@ -34,9 +34,10 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     If the version requested matches the one in that text file then this function does
     nothing unless force is True.
 
-    If a specific version is not requested (the default) and the date in that text file
-    is today, then this function does nothing unless force is True even if there is a more
-    recent version available from the ASTRON server.
+    If a specific version is not requested (the default) and the modification time of that text
+    file is less than 24 hrs before now then this function does nothing unless force is True. This
+    limits the number of attempts to update the measures data (including checking for more recent
+    data) to once per day.
 
     When auto_update_rules is True then path must exist and contain the expected readme.txt file.
     Path must be owned by the user, force must be False, and the version must be None. This 
@@ -96,7 +97,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     Parameters
        - path (str=None) - Folder path to place updated measures data. Must contain a valid geodetic/readme.txt. If not set then config.measurespath is used.
        - version (str=None) - Version of measures data to retrieve (usually in the form of yyyymmdd-160001.ztar, see measures_available()). Default None retrieves the latest.
-       - force (bool=False) - If True, always re-download the measures data. Default False will not download measures data if already updated today unless the version parameter is specified and different from what was last downloaded.
+       - force (bool=False) - If True, always re-download the measures data. Default False will not download measures data if updated within the past day unless the version parameter is specified and different from what was last downloaded.
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
        - auto_update_rules (bool=False) - If True then the user must be the owner of path, version must be None, and force must be False.
         
@@ -148,8 +149,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
         os.makedirs(path)
         
     current = None
-    updated = None
-    today_string = datetime.today().strftime('%Y-%m-%d')
+    ageRecent = False
 
     # first, does this look like it needs to be updated
 
@@ -157,12 +157,18 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     readmeInfo = get_data_info(path, logger, type='measures')
     if readmeInfo is not None:
         current = readmeInfo['version']
-        updated = readmeInfo['date']
+        if readmeInfo['age'] is not None:
+            ageRecent = readmeInfo['age'] < 1.0
 
     if not force:
         # don't re-download the same data
-        if ((version is not None) and (version == current)) or ((version is None) and (updated == today_string)):
-            print_log_messages('measures_update current measures detected in %s, using version %s' % (path, current), logger)
+        if (version is not None) and (version == current):
+            print_log_messages('measures_update requested version already installed in %s' % path, logger)
+            return
+        
+        # don't check for new version if the age is less than 1 day
+        if version is None and ageRecent:
+            print_log_messages('measures_update latest version checked recently in %s, using version %s' % (path, current), logger)
             return
         
         # don't overwrite something that looks bad unless forced to do so
@@ -201,25 +207,31 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
         if not do_update:
             # recheck the readme file, another update may have already happened before the lock was obtained
             current = None
-            updated = None
+            ageRecent = False
+            
             readmeInfo = get_data_info(path, logger, type='measures')
             if readmeInfo is not None:
                 current = readmeInfo['version']
-                updated = readmeInfo['date']
+                if readmeInfo['age'] is not None:
+                    ageRecent = readmeInfo['age'] < 1.0
 
-            if ((version is not None) and (version == current)) or ((version is None) and (updated == today_string)):
-                # no update will be done, version is as requested or it's already been updated today
-                print_log_messages('measures_update current measures detected in %s, using version %s' % (path, current), logger)
+            if (version is not None) and (version == current):
+                # no update will be done, version is as requested
+                print_log_messages('measures_update requested measures version detected in %s, using version %s' % (path, current), logger)
+            elif (version is None) and ageRecent:
+                # no update will be done, it's already been checked or updated recently
+                print_log_messages('measures_update latest measures version checked recently in %s, using version %s' % (path, current), logger)
             else:
+                # final check for problems before updating
                 if not force and readmeInfo is not None and (version=='invalid' or version=='unknown'):
                     # at this point, this indicates something is unexpectedly wrong, do not continue
                     print_log_messages('Something unexpected has changed in the measures path location, and measures_update can not continue', logger, True)
                     print_log_messages('a previous measures_update may have exited unexpectedly', logger, True)
                     print_log_messages('It may be necessary to reinstall the casarundata as well as the measures data if %s is the correct path' % path, logger, True)
                     # update is already turned off, the lock file will be cleaned up on exit
-                    
-                # an update is needed
-                do_update = True
+                else:
+                    # an update is needed
+                    do_update = True
 
         if do_update:
             if force:
@@ -233,6 +245,8 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
             files = sorted([ff for ff in ftp.nlst() if (len(ff) > 0) and (not ff.endswith('.dat')) and (ftp.size(ff) > 0)])
 
             # target filename to download
+            # for the non-force unspecified version case this can only get here if the age is > 1 day so there should be a newer version
+            # but that isn't checked - this could install a version that's already installed
             target = files[-1] if version is None else version
             if target not in files:
                 print_log_messages('measures_update cant find specified version %s' % target, logger, True)

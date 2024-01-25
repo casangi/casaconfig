@@ -51,9 +51,9 @@ def get_data_info(path=None, logger=None, type=None):
     expected for casarundata then the version returned for 'casarundata' is 'unknown' and
     the date is an empty string. In that case the path may contain casarundata from a legacy
     installation of CASA data. CASA will be able to use the files at this location but they
-    can not be maintained by casaconfig. If the path is not empty but does not appear to 
-    contain legacy casarundata or the readme.txt file found there can not be read as expected
-    then the version is 'invalid'.
+    can not be maintained by casaconfig. If the path is not empty (except for a possible lock
+    file while it's in use but does not appear to contain legacy casarundata or the readme.txt 
+    file found there can not be read as expected then the version is 'invalid'.
 
     If no readme.txt file can be found for the measures at path/geodetic but both the geodetic
     and ephemeris directories are present in path then the version returned for 'measures' is
@@ -83,9 +83,13 @@ def get_data_info(path=None, logger=None, type=None):
     result = None
 
     import os
+    import time
     import importlib.resources
     from .print_log_messages import print_log_messages
     from .read_readme import read_readme
+
+    currentTime = time.time()
+    secondsPerDay = 24. * 60. * 60.
 
     if path is None:
         from .. import config as _config
@@ -106,51 +110,59 @@ def get_data_info(path=None, logger=None, type=None):
     # casarundata and measures 
 
     if os.path.isdir(path) and (len(os.listdir(path))>0):
-        # there's something at path, look for the casarundata readme
-        if type is None or type=='casarundata':
-            datareadme_path = os.path.join(path,'readme.txt')
-            if os.path.exists(datareadme_path):
-                # the readme exists, get the info
-                result['casarundata'] = {'version':'error', 'date':'', 'manifest':[]}
-                readmeContents = read_readme(datareadme_path)
-                if readmeContents is not None:
-                    currentVersion = readmeContents['version']
-                    currentDate = readmeContents['date']
-                    # the manifest ('extra') must exist with at least 1 entry, otherwise this is no a valid readme file and the version should be 'error'
-                    if len(readmeContents['extra']) > 0:
-                        result['casarundata'] = {'version':currentVersion, 'date':currentDate, 'manifest':readmeContents['extra']}
-            else:
-                # does it look like it's probably casarundata?
-                expected_dirs = ['alma','catalogs','demo','ephemerides','geodetic','gui','nrao']
-                ok = True
-                for d in expected_dirs:
-                    if not os.path.isdir(os.path.join(path,d)): ok = False
-                if ok:
-                    # probably casarundata
-                    result['casarundata'] = {'version':'unknown', 'date':''}
+        # if the only thing at path is the lock file then proceed as if path is empty - skip this section
+        pathfiles = os.listdir(path)
+        if len(pathfiles) == 1 and pathfiles[0] == "data_update.lock":
+            pass
+        else:
+            # there's something at path, look for the casarundata readme
+            if type is None or type=='casarundata':
+                datareadme_path = os.path.join(path,'readme.txt')
+                if os.path.exists(datareadme_path):
+                    # the readme exists, get the info
+                    result['casarundata'] = {'version':'error', 'date':'', 'manifest':[], 'age':None}
+                    readmeContents = read_readme(datareadme_path)
+                    if readmeContents is not None:
+                        currentAge = (currentTime - os.path.getmtime(datareadme_path)) / secondsPerDay
+                        currentVersion = readmeContents['version']
+                        currentDate = readmeContents['date']
+                        # the manifest ('extra') must exist with at least 1 entry, otherwise this is no a valid readme file and the version should be 'error'
+                        if len(readmeContents['extra']) > 0:
+                            result['casarundata'] = {'version':currentVersion, 'date':currentDate, 'manifest':readmeContents['extra'], 'age':currentAge}
                 else:
-                    # probably not casarundata
-                    result['casarundata'] = {'version':'invalid', 'date':''}
+                    # does it look like it's probably casarundata?
+                    expected_dirs = ['alma','catalogs','demo','ephemerides','geodetic','gui','nrao']
+                    ok = True
+                    for d in expected_dirs:
+                        if not os.path.isdir(os.path.join(path,d)): ok = False
+                    if ok:
+                        # probably casarundata
+                        result['casarundata'] = {'version':'unknown', 'date':'', 'manifest': None,'age':None}
+                    else:
+                        # probably not casarundata
+                        # this is invalid, unexpected things are happening there
+                        result['casarundata'] = {'version':'invalid', 'date':'', 'manifest': None, 'age':None}
 
-        if type is None or type=='measures':
-            # look for the measures readme
-            measuresreadme_path = os.path.join(path,'geodetic/readme.txt')
-            if os.path.exists(measuresreadme_path):
-                # the readme exists, get the info
-                result['measures'] = {'version':'error', 'date':''}
-                readmeContents = read_readme(measuresreadme_path)
-                if readmeContents is not None:
-                    currentVersion = readmeContents['version']
-                    currentDate = readmeContents['date']
-                    result['measures'] = {'version':currentVersion,'date':currentDate}
-            else:
-                # does it look like it's probably measuresdata?
-                # path should have ephemerides and geodetic directories
-                if os.path.isdir(os.path.join(path,'ephemerides')) and os.path.isdir(os.path.join(path,'geodetic')):
-                    result['measures'] = {'version':'unknown', 'date':''}
+            if type is None or type=='measures':
+                # look for the measures readme
+                measuresreadme_path = os.path.join(path,'geodetic/readme.txt')
+                if os.path.exists(measuresreadme_path):
+                    # the readme exists, get the info
+                    result['measures'] = {'version':'error', 'date':'', 'age':None}
+                    readmeContents = read_readme(measuresreadme_path)
+                    if readmeContents is not None:
+                        currentVersion = readmeContents['version']
+                        currentDate = readmeContents['date']
+                        currentAge = (currentTime - os.path.getmtime(measuresreadme_path)) / secondsPerDay
+                        result['measures'] = {'version':currentVersion,'date':currentDate,'age':currentAge}
                 else:
-                    # probably not measuresdata
-                    result['measures'] = {'version':'invalid', 'date':''}
+                    # does it look like it's probably measuresdata?
+                    # path should have ephemerides and geodetic directories
+                    if os.path.isdir(os.path.join(path,'ephemerides')) and os.path.isdir(os.path.join(path,'geodetic')):
+                        result['measures'] = {'version':'unknown', 'date':'', 'age':None}
+                    else:
+                        # probably not measuresdata
+                        result['measures'] = {'version':'invalid', 'date':'', 'age':None}
 
     if type is None or type=='release':
         # release data versions

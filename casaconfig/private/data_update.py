@@ -34,13 +34,14 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
     and nothing is updated. Release version information is only available in
     monolithic CASA installations.
 
-    If a specific version is not requested (the default) **and** the version currently
-    at path was installed today then this function does nothing even if there is a more
-    recent version available from the CASA server. 
+    If a specific version is not requested (the default) and a check for the 
+    versions available for installation at path has been done within the past
+    24 hours then this function does nothing even if there is a more
+    recent version available from the CASA server unless force is True.
 
-    If force is True then the requested version is installed even if that version
-    is already installed or a version was previously installed today (there may be a
-    newer version available).
+    If force is True then the requested version (or the latest version available
+    now) is installed even if that version is already installed or a check for the
+    latest version has been done within the past 24 hours.
 
     A text file (readme.txt at path) records the version string, the date 
     when that version was installed in path, and the files installed into path. That file
@@ -92,7 +93,7 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
     Parameters
        - path (str=None) - Folder path to update. Must contain a valid readme.txt. If not set then config.measurespath is used.
        - version (str=None) - Version of casarundata to retrieve (usually in the form of casarundata-x.y.z.tar.gz, see data_available()). Default None retrieves the latest.
-       - force (bool=False) - If True, always re-download the casarundata. Default False will not download casarundata if already updated today unless the version parameter is specified and different from what was last downloaded.
+       - force (bool=False) - If True, always re-download the casarundata. Default False will not download casarundata if updated within the past day unless the version parameter is specified and different from what was last downloaded.
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal.
        - auto_update_rules (bool=False) - If True then the user must be the owner of path, version must be None, and force must be False.
         
@@ -147,6 +148,7 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
     installed_files = []
     currentVersion = []
     currentDate = []
+    ageRecent = False
     
     dataReadmeInfo = get_data_info(path, logger, type='casarundata')
     
@@ -159,6 +161,8 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
     currentVersion = dataReadmeInfo['version']
     currentDate = dataReadmeInfo['date']
     installed_files = dataReadmeInfo['manifest']
+    if dataReadmeInfo['age'] is not None:
+        ageRecent = dataReadmeInfo['age'] < 1.0
 
     if currentVersion is 'unknown':
         print_log_messages('The data update path appears to be casarundata but no readme.txt file was found', logger, False)
@@ -172,17 +176,18 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
         # no lock has been set yet, safe to simply return here
         return
 
-    today_string = datetime.today().strftime('%Y-%m-%d')
-    if version is None and force is False and currentDate == today_string:
-        # if version is None, currentDate is today and force is False then return without checking for any newer versions
-        print_log_messages('data_update current casarundata detected in %s, using version %s' % (path, currentVersion), logger)
+    if version is None and force is False and ageRecent:
+        # if version is None, the readme is less than 1 day old  and force is False then return without checking for any newer versions
+        print_log_messages('data_update latest version checked recently in %s, using version %s' % (path, currentVersion), logger)
         # no lock has been set yet, safe to simply return here
         return
 
     available_data = data_available()
     requestedVersion = version
+    latestVersion = False
 
     if requestedVersion is None:
+        latestVersion = True
         requestedVersion = available_data[-1]
 
     expectedMeasuresVersion = None
@@ -218,7 +223,12 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
                 return
         else:
             # normal usage, ok to return now
-            print_log_messages('Requested casarundata is installed in %s, using version %s' % (path, currentVersion), logger)
+            if latestVersion:
+                print_log_messages('The latest version is already installed in %s, using version %s' % (path, currentVersion), logger)
+                # touch the dates of the readme to prevent a future check on available data for the next 24 hours
+                os.utime(readme_path)
+            else:
+                print_log_messages('Requested casarundata is installed in %s, using version %s' % (path, currentVersion), logger)
             # no lock has been set yet, safe to simply return here
             return
 
@@ -244,6 +254,7 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
             currentVersion = dataReadmeInfo['version']
             currentDate = dataReadmeInfo['date']
             installedFiles = dataReadmeInfo['manifest']
+            ageRecent = dataReadmeInfo['age'] < 1.0
             if ((currentVersion == requestedVersion) and (not force)):
                 if expectedMeasuresVersion is not None:
                     # this is a 'release' update request, need to check that the measures version is also now OK
@@ -257,8 +268,13 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
                         print_log_messages('data update requested "release" version of casarundata and measures are already installed.', logger)
                 else:
                     # nothing to do here, already at the expected version and an update is not being forced
+                    if latestVersion:
+                        print_log_messages('The latest version is already installed, using version %s' % currentVersion, logger)
+                        # touch the dates of the readme to prevent a future check on available data for the next 24 hours
+                        os.utime(readme_path)
+                    else:
+                        print_log_messages('requested version is already installed.', logger)
                     do_update = False
-                    print_log_messages('data_update requested version is already installed.', logger)
                     
             if do_update:
                 # update is still on, check the manifest
