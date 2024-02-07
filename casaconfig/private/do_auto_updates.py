@@ -45,20 +45,23 @@ def do_auto_updates(configDict, logger=None):
     from .print_log_messages import print_log_messages
     from .data_update import data_update
     from .measures_update import measures_update
-    
+
     if configDict.measurespath is None:
         # likely still unset in casasiteconfig.py, suggest setting it in ~/.casa/config.py
         # or ask the site administrator (which may be the user) to edit casasiteconfig.py
         # point at the documentation
         # continue, because things still might work if there are measures in datapath
-        print_log_messages('measurespath is None in config', logger, True)
-        print_log_messages('this likely means a casasiteconfig.py was used and measurespath remains unset there.', logger, True)
-        print_log_messages('Either set measurespath in your config file at ~/.casa/config.py', logger, True)
-        print_log_messages('or ask the site manager to set that in casasiteconfig.py', logger, True)
-        print_log_messages('visit https://casadocs.readthedocs.io/en/stable/notebooks/external-data.html for more information', logger, True)
+        msgs = []
+        msgs.append('measurespath is None in config')
+        msgs.append('this likely means a casasiteconfig.py was used and measurespath remains unset there.')
+        msgs.append('Either set measurespath in your config file at ~/.casa/config.py')
+        msgs.append('or ask the site manager to set that in casasiteconfig.py')
+        msgs.append('visit https://casadocs.readthedocs.io/en/stable/notebooks/external-data.html for more information')
 
         if (configDict.measures_auto_update or configDict.data_auto_update):
-            print('\nAuto updates of measures path are not possible because measurespath is not set, skipping auto updates', logger, True)
+            msgs.append('Auto updates of measures path are not possible because measurespath is not set, skipping auto updates')
+
+        print_log_messages(msgs, logger, True)
 
         return
 

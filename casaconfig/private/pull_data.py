@@ -107,6 +107,11 @@ def pull_data(path=None, version=None, force=False, logger=None):
         print_log_messages('path is None and has not been set in config.measurespath (probably casasiteconfig.py). Provide a valid path and retry.', logger, True)
         return
 
+    # when a specific version is requested then the measures readme.txt that is part of that version
+    # will get a timestamp of now so that default measures updates won't happen for a day unless the
+    # force argument is used for measures_update
+    namedVersion = version is not None
+
     path = os.path.expanduser(path)
     readme_path = os.path.join(path, 'readme.txt')
 
@@ -125,26 +130,30 @@ def pull_data(path=None, version=None, force=False, logger=None):
         installed_files = readmeInfo['manifest']
 
         if currentVersion == 'invalid':
-            print_log_messages('destination path is not empty and this does not appear to be casarundata OR the readme.txt file found there could not be read as expected', logger, True)
-            print_log_messages('choose a different path or empty this path and try again', logger, True)
+            msgs = []
+            msgs.append('destination path is not empty and this does not appear to be casarundata OR the readme.txt file found there could not be read as expected')
+            msgs.append('choose a different path or empty this path and try again')
+            print_log_messages(msgs, logger, True)
             # no lock has been set yet, safe to simply return here
             return
 
         if currentVersion == 'unknown':
-            print_log_messages('destination path appears to be casarundata but no readme.txt file was found', logger, False)
-            print_log_messages('no data will be installed but CASA use of this data may be OK. Choose a different path or delete this path to install new casarundata.', logger, False)
+            msgs = []
+            msgs.append('destination path appears to be casarundata but no readme.txt file was found')
+            msgs.append('no data will be installed but CASA use of this data may be OK. Choose a different path or delete this path to install new casarundata.')
             if force:
-                print_log_messages('force is True but there is no readme.txt found and the location is not empty, no data will be installed', logger, True)
-                print_log_messages('Choose a different path or empty this path to install new casarundata', logger, True)
+                msgs.append('force is True but there is no readme.txt found and the location is not empty, no data will be installed')
+                msgs.append('Choose a different path or empty this path to install new casarundata')
+            print_log_messages(msgs, logger, True)
             # no lock as been set yet, safe to simply return here
             return
 
         if (installed_files is None or len(installed_files) == 0):
             # this shouldn't happen
-            print('')
-            print_log_messages('destination path is not empty and the readme.txt file found there did not contain the expected list of installed files', logger, True)
-            print_log_messages('choose a different path or empty this path and try again', logger, True)
-            print('')
+            msgs = []
+            msgs.append('destination path is not empty and the readme.txt file found there did not contain the expected list of installed files')
+            msgs.append('choose a different path or empty this path and try again')
+            print_log_messages(msgs, logger, True)
             # no lock as been set yet, safe to simply return here
             return
             
@@ -196,12 +205,12 @@ def pull_data(path=None, version=None, force=False, logger=None):
         lock_fd = get_data_lock(path, 'pull_data')
         # if lock_fd is None it means the lock file was not empty - because we know that path exists at this point
         if lock_fd is None:
-            print('')
-            print_log_messages('The lock file at %s is not empty.' % path, logger, True)
-            print_log_messages('A previous attempt to update path may have failed or exited prematurely.', logger, True)
-            print_log_messages('Remove the lock file and set force to True with the desired version (default to the most recent).', logger, True)
-            print_log_messages('It may be best to clean out that location and do a fresh pull_data.', logger, True)
-            print('')
+            msgs = []
+            msgs.append('The lock file at %s is not empty.' % path)
+            msgs.append('A previous attempt to update path may have failed or exited prematurely.')
+            msgs.append('Remove the lock file and set force to True with the desired version (default to the most recent).')
+            msgs.append('It may be best to clean out that location and do a fresh pull_data.')
+            print_log_messages(msgs, logger, True)
             return
         
         do_pull = True
@@ -238,10 +247,10 @@ def pull_data(path=None, version=None, force=False, logger=None):
                 # incompatible with this attempt
                 if version in ['invalid','error','unknown']:
                     do_pull = False
-                    print('')
-                    print_log_messages('Unexpected version or problem found in readme.txt file during pull_data, can not safely pull the requested version', logger, True)
-                    print_log_messages('This should not happen unless multiple sessions are trying to pull_data at the same time and one experienced problems or was done out of sequence', logger, True)
-                    print('')
+                    msgs = []
+                    msgs.append('Unexpected version or problem found in readme.txt file during pull_data, can not safely pull the requested version')
+                    msgs.append('This should not happen unless multiple sessions are trying to pull_data at the same time and one experienced problems or was done out of sequence')
+                    print_log_messages(msgs, logger, True)
                     
 
                 if do_pull:
@@ -250,23 +259,28 @@ def pull_data(path=None, version=None, force=False, logger=None):
                     if len(installed_files) == 0:
                         # this shoudn't happen, do not do a pull
                         do_pull = False
-                        print('')
-                        print_log_messages('destination path is not empty and the readme.txt file found there did not contain the expected list of installed files', logger, True)
-                        print_log_messages('This should not happen unless multiple sessions are trying to pull_data at the same time and one experienced problems or was done out of sequence', logger, True)
-                        print_log_messages('Check for other updates in process or choose a different path or clear out this path and try again', logger, True)
-                        print('')
+                        msgs = []
+                        msgs.append('destination path is not empty and the readme.txt file found there did not contain the expected list of installed files')
+                        msgs.append('This should not happen unless multiple sessions are trying to pull_data at the same time and one experienced problems or was done out of sequence')
+                        msgs.append('Check for other updates in process or choose a different path or clear out this path and try again')
+                        print_log_messages(msgs, logger, True)
 
         if do_pull:
             do_pull_data(path, version, installed_files, currentVersion, currentDate, logger)
+            if namedVersion:
+                # a specific version has been requested, set the times on the measures readme.txt to now to avoid
+                # a default update of the measures data without using the force argument
+                measuresReadmePath = os.path.join(path,'geodetic/readme.txt')
+                os.utime(measuresReadmePath)
                         
-        # truncate the lock file
+        # truncate the lock filed
         lock_fd.truncate(0)
         
     except Exception as exc:
-        print('')
-        print_log_messages('ERROR! : Unexpected exception while populating casarundata version %s to %s' % (version, path), logger, True)
-        print_log_messages('ERROR! : %s' % exc, logger, True)
-        print()
+        msgs = []
+        msgs.append('ERROR! : Unexpected exception while populating casarundata version %s to %s' % (version, path))
+        msgs.append('ERROR! : %s' % exc)
+        print_log_messages(msgs, logger, True)
         # leave the contents of the lock file as is to aid in debugging
         # import traceback
         # traceback.print_exc()

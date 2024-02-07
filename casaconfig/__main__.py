@@ -7,6 +7,8 @@ parser = get_argparser(add_help=True)
 # get_argparser supplies configfile, noconfig, nositeconfig
 # add measurespath, pull-data, data-update, measures-update, update-all, reference-testing, current-data
 
+parser.prog = "casaconfig"
+
 # measurespath will default to the value in config if not set here
 parser.add_argument( "--measurespath", dest='measurespath', default=None,
                      help="location of casarundata")
@@ -23,6 +25,8 @@ parser.add_argument( "--reference-testing", action='store_const', const=True, de
                      help="set measurespath to the casarundata when this version was produced, used for testing purposes")
 parser.add_argument( "--current-data", dest='currentdata', action='store_const', const=True, default=False,
                      help="print out a summary of the current casarundata and measures data installed in measurespath and then exit")
+parser.add_argument("--force", dest='force', action='store_const', const=True, default=False,
+                    help="force an update using the force=True option to update_all, data_update, and measures_update")
 
 # initialize the configuration to be used
 flags,args = parser.parse_known_args(sys.argv)
@@ -65,8 +69,8 @@ if flags.currentdata:
             
         # measures
         measuresInfo = dataInfo['measures']
-        if measuresInfo is None or casarunInfo['version'] == "invalid":
-            print("No measures data found (missing or unexpected readme.txt, not obviously legaca measures data).")
+        if measuresInfo is None or measuresInfo['version'] == "invalid":
+            print("No measures data found (missing or unexpected readme.txt, not obviously legacy measures data).")
         elif measuresInfo['version'] == "unknown":
             print("measures version is unknown (probably legacy measures data not maintained by casaconfig).")
         else:
@@ -83,17 +87,18 @@ else:
         # ignore all other options
     else:
         # the update options, update all does everything, no need to invoke anything else
+        print("Checking for updates into %s" % measurespath)
         if flags.updateall:
-            casaconfig.update_all(measurespath)
+            casaconfig.update_all(measurespath,force=flags.force)
         else:
             # do any pull_update first
             if flags.pulldata:
                 casaconfig.pull_data(measurespath)
             # then data_update, not necessary if pull_data just happened
             if flags.dataupdate and not flags.pulldata:
-                casaconfig.data_update(measurespath)
+                casaconfig.data_update(measurespath, force=flags.force)
             # then measures_update
             if flags.measuresupdate:
-                casaconfig.measures_update(measurespath)
+                casaconfig.measures_update(measurespath, force=flags.force)
 
 sys.exit(0)

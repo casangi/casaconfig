@@ -15,7 +15,7 @@
 this module will be included in the api
 """
 
-def update_all(path=None, logger=None):
+def update_all(path=None, logger=None, force=False):
     """
     Update the data contants at path to the most recently released versions
     of casarundata and measures data. 
@@ -32,6 +32,8 @@ def update_all(path=None, logger=None):
 
     If path already contains the most recent versions of casarundata and 
     measurespath then nothing will change at path.
+
+    The force argument is passed to data_update and measures_update
 
     This uses pull_data, data_update and measures_update. See the
     documentation for those functions for additional details.
@@ -76,7 +78,10 @@ def update_all(path=None, logger=None):
     # path must be a directory and it must be owned by the user
     
     if (not os.path.isdir(path)) or (os.stat(path).st_uid != os.getuid()):
-        print_log_messages("path must exist as a directory and it must be owned by the user, path = %s" % path, logger, True)
+        msgs = []
+        msgs.append("Warning: path must exist as a directory and it must be owned by the user, path = %s" % path)
+        msgs.append("Warning: no updates are possible on this path by this user.")
+        print_log_messages(msgs, logger, False)
         return
 
     # if path is empty, first use pull_data
@@ -106,7 +111,7 @@ def update_all(path=None, logger=None):
         return
 
     # the updates should work now
-    data_update(path, logger)
-    measures_update(path, logger)
+    data_update(path, logger, force=force)
+    measures_update(path, logger, force=force)
 
     return

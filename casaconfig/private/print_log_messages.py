@@ -16,6 +16,8 @@ def print_log_messages(msg, logger, is_err=False):
     """
     Print msg and optionally write it to an instance of the casalogger.
 
+    If msg is a list then the elements are each printed first followed by logging each element.
+
     Messages are normally printed to sys.stdout and logged as INFO to the casalogger.
     
     When is_err is True the message is printed sys.stderr and logged as SEVERE
@@ -39,5 +41,12 @@ def print_log_messages(msg, logger, is_err=False):
         fileout = sys.stderr
         loglevel = 'SEVERE'
 
-    print(msg,file=fileout)
-    if logger is not None: logger.post(msg, loglevel)
+    # this is rarely called and this should be a fast operation, it makes the code simpler
+    if type(msg) is not list:
+        msg = [msg]
+
+    for m_msg in msg:
+        print(m_msg,file=fileout)
+
+    for m_msg in msg:
+        if logger is not None: logger.post(m_msg, loglevel)

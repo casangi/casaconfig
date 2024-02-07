@@ -15,11 +15,13 @@
 this module will be included in the api
 """
 
-def measures_update(path=None, version=None, force=False, logger=None, auto_update_rules=False):
+def measures_update(path=None, version=None, force=False, logger=None, auto_update_rules=False, use_astron_obs_table=False):
     """
-    Retrieve IERS data used for measures calculations from the ASTRON server
+    Update or install the IERS data used for measures calculations from the ASTRON server at path.
     
     Original data source used by ASTRON is here: https://www.iers.org/IERS/EN/DataProducts/data.html
+
+    If no update is necessary then this function will silently return.
 
     CASA maintains a separate Observatories table which is available in the casarundata
     collection through pull_data and data_update. The Observatories table found at ASTRON
@@ -35,9 +37,12 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     nothing unless force is True.
 
     If a specific version is not requested (the default) and the modification time of that text
-    file is less than 24 hrs before now then this function does nothing unless force is True. This
-    limits the number of attempts to update the measures data (including checking for more recent
-    data) to once per day.
+    file is less than 24 hrs before now then this function does nothing unless force is True. When this
+    function checks for a more recent version and finds that the installed version is the most recent
+    then modification time of that text file is checked to the current time even though nothing has
+    changed in path. This limits the number of attempts to update the measures data (including checking f\
+    or more recent data) to once per day. When the force argument is True and a specific version is
+    not requested then this function always checks for the latest version.
 
     When auto_update_rules is True then path must exist and contain the expected readme.txt file.
     Path must be owned by the user, force must be False, and the version must be None. This 
@@ -121,6 +126,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     from .print_log_messages import print_log_messages
     from .get_data_lock import get_data_lock
     from .get_data_info import get_data_info
+    from .measures_available import measures_available
     
     if path is None:
         from .. import config as _config
@@ -141,7 +147,10 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
             print_log_messages('force must be False when auto_update_rules is True', logger, True)
             return
         if (not os.path.isdir(path)) or (os.stat(path).st_uid != os.getuid()):
-            print_log_messages('path must exist as a directory and it must be owned by the user when auto_update_rules is True', logger, True)
+            msgs = []
+            msgs.append("Warning: path must exist as a directory and it must be owned by the user, path = %s" % path)
+            msgs.append("Warning: no measures auto update is possible on this path by this user.")
+            print_log_messages(msgs, logger, False)
             return
     
     if not os.path.exists(path):
@@ -161,19 +170,15 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
             ageRecent = readmeInfo['age'] < 1.0
 
     if not force:
-        # don't re-download the same data
-        if (version is not None) and (version == current):
-            print_log_messages('measures_update requested version already installed in %s' % path, logger)
-            return
-        
         # don't check for new version if the age is less than 1 day
         if version is None and ageRecent:
-            print_log_messages('measures_update latest version checked recently in %s, using version %s' % (path, current), logger)
+            # normal use is silent, this line is useful during debugging
+            # print_log_messages('measures_update latest version checked recently in %s, using version %s' % (path, current), logger)
             return
         
         # don't overwrite something that looks bad unless forced to do so
         if current == 'invalid':
-            print_log_messages('the measures readme.txt file could not be read as expected, an update can not proceed unless force is True', logger, True)
+            print_log_messages('The measures readme.txt file could not be read as expected, an update can not proceed unless force is True', logger, True)
             return
 
         # don't overwrite something that looks like valid measures data unless forced to do so
@@ -181,6 +186,38 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
             print_log_messages('The measures data at %s is not maintained by casaconfig and so it can not be updated unless force is True' % path, logger, True)
             return
 
+        checkVersion = version
+        if checkVersion is None:
+            # get the current most recent version
+            try:
+                checkVersion = measures_available()[-1]
+            except:
+                # unsure what happened, leave it at none, which will trigger an update attempt, which might work
+                pass
+
+        # don't re-download the same data
+        if (checkVersion is not None) and (checkVersion == current):
+            # normal use is silent, this line is useful during debugging
+            # print_log_messages('measures_update requested version already installed in %s' % path, logger)
+            # update the age of the readme to now
+            try:
+                readme_path = os.path.join(path,'geodetic/readme.txt')
+                # readme_path should already exist if it's here
+                os.utime(readme_path)
+            except:
+                # unsure what happened, everything otherwise is fine if we got here, ignore this error
+                pass
+            
+            return
+
+        # don't do anything unless the Observatories table is already installed as expected
+        obsTabPath = os.path.join(path,'geodetic/Observatories')
+        if not os.path.isdir(obsTabPath):
+            print("Error: the Observatories table was not found as expected in %s" % path, logger, True)
+            print("Either install casarundata first or set use_astron_obs_table and force to be True when using measures_update.", logger, True)
+            print("Note that the Observatories table provided in the Astron measures tarfile is not the same as that maintained by CASA", logger, True)
+            return
+        
     # path must be writable with execute bit set
     if (not os.access(path, os.W_OK | os.X_OK)) :
         print_log_messages('No permission to write to the measures path, cannot update : %s' % path, logger, True)
@@ -191,15 +228,18 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     # lock the measures_update.lock file
     lock_fd = None
     try:
-        print_log_messages('measures_update measures need to be updated, acquiring the lock ... ', logger)
+        print_log_messages('measures_update ... acquiring the lock ... ', logger)
 
         lock_fd = get_data_lock(path, 'measures_update')
         # if lock_fd is None it means the lock file was not empty - because we know that path exists at this point
         if lock_fd is None:
-            print_log_messages('The lock file at %s is not empty.' % path, logger, True)
-            print_log_messages('A previous attempt to update path may have failed or exited prematurely.', logger, True)
-            print_log_messages('Remove the lock file and set force to True with the desired version (default to most recent).', logger, True)
-            print_log_messages('It may be best to completely repopulate path using pull_data and measures_update.', logger, True)
+            # using a list of messages results in a better printing if the logger is redirected to the terminal
+            msgs = []
+            msgs.append('The lock file at %s is not empty.' % path)
+            msgs.append('A previous attempt to update path may have failed or exited prematurely.')
+            msgs.append('Remove the lock file and set force to True with the desired version (default to most recent).')
+            msgs.append('It may be best to completely repopulate path using pull_data and measures_update.')
+            print_log_messages(msgs, logger, True)
             return
 
         do_update = force
@@ -216,18 +256,21 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
                     ageRecent = readmeInfo['age'] < 1.0
 
             if (version is not None) and (version == current):
-                # no update will be done, version is as requested
-                print_log_messages('measures_update requested measures version detected in %s, using version %s' % (path, current), logger)
+                # no update will be done, version is as requested - not silent here because the lock is in use
+                print_log_messages('The requested measures version is already installed in %s, using version %s' % (path, current), logger)
             elif (version is None) and ageRecent:
-                # no update will be done, it's already been checked or updated recently
-                print_log_messages('measures_update latest measures version checked recently in %s, using version %s' % (path, current), logger)
+                # no update will be done, it's already been checked or updated recently - not silent here because the lock is in use
+                print_log_messages('The latest measures version was checked recently in %s, using version %s' % (path, current), logger)
             else:
                 # final check for problems before updating
                 if not force and readmeInfo is not None and (version=='invalid' or version=='unknown'):
                     # at this point, this indicates something is unexpectedly wrong, do not continue
-                    print_log_messages('Something unexpected has changed in the measures path location, and measures_update can not continue', logger, True)
-                    print_log_messages('a previous measures_update may have exited unexpectedly', logger, True)
-                    print_log_messages('It may be necessary to reinstall the casarundata as well as the measures data if %s is the correct path' % path, logger, True)
+                    # using a list of messages results in a better printing if the logger is redirected to the terminal
+                    msgs = []
+                    msgs.append('Something unexpected has changed in the measures path location, and measures_update can not continue')
+                    msgs.append('A previous measures_update may have exited unexpectedly')
+                    msgs.append('It may be necessary to reinstall the casarundata as well as the measures data if %s is the correct path' % path)
+                    print_log_messages(msgs, logger, True)
                     # update is already turned off, the lock file will be cleaned up on exit
                 else:
                     # an update is needed
@@ -235,9 +278,9 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
 
         if do_update:
             if force:
-                print_log_messages('meaures_update a measures update has been requested by the force argument', logger)
+                print_log_messages('A measures update has been requested by the force argument', logger)
 
-            print_log_messages('measures_update connecting to ftp.astron.nl ...', logger)
+            print_log_messages(' ... connecting to ftp.astron.nl ...', logger)
 
             ftp = FTP('ftp.astron.nl')
             rc = ftp.login()
@@ -252,38 +295,48 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
                 print_log_messages('measures_update cant find specified version %s' % target, logger, True)
 
             else:
-                # there are files to extract, remove the readme.txt file in case this dies unexpectedly
-                readme_path = os.path.join(path,'geodetic/readme.txt')
-                if os.path.exists(readme_path):
-                    os.remove(readme_path)
+                # there are files to extract, make sure there's no past measures.ztar from a failed previous install
+                ztarPath = os.path.join(path,'measures.ztar')
+                if os.path.exists(ztarPath):
+                    os.remove(ztarPath)
     
-                with open(os.path.join(path,'measures.ztar'), 'wb') as fid:
-                    print_log_messages('measures_update downloading %s from ASTRON server to %s ...' % (target, path), logger)
+                with open(ztarPath, 'wb') as fid:
+                    print_log_messages('  ... downloading %s from ASTRON server to %s ...' % (target, path), logger)
                     ftp.retrbinary('RETR ' + target, fid.write)
 
                 ftp.close()
-    
+
+                # remove any existing measures readme.txt now in case something goes wrong during extraction
+                readme_path = os.path.join(path,'geodetic/readme.txt')
+                if os.path.exists(readme_path):
+                    os.remove(readme_path)
+
                 # extract from the fetched tarfile
-                with tarfile.open(os.path.join(path,'measures.ztar'),mode='r:gz') as ztar:
+                with tarfile.open(ztarPath, mode='r:gz') as ztar:
                     # the list of members to extract
                     x_list = []
                     for m in ztar.getmembers() :
-                        # always exclude the Observatories table and  *.old names in geodetic
-                        if not((re.search('geodetic',m.name) and re.search('.old',m.name)) or re.search('Observatories',m.name)):
-                            x_list.append(m)
+                        if force and use_astron_obs_table:
+                            # exclude the *.old names in geodetic
+                           if not(re.search('geodetic',m.name) and re.search('.old',m.name)):
+                                x_list.append(m)
+                        else:
+                            # exclude the Observatories table and  *.old names in geodetic
+                            if not((re.search('geodetic',m.name) and re.search('.old',m.name)) or re.search('Observatories',m.name)):
+                                x_list.append(m)
 
                     # use the 'data' filter if available, revert to previous 'fully_trusted' behavior of not available
                     ztar.extraction_filter = getattr(tarfile, 'data_filter', (lambda member, path: member))
                     ztar.extractall(path=path,members=x_list)
                     ztar.close()
 
-                os.system("rm %s" % os.path.join(path, 'measures.ztar'))
+                os.remove(ztarPath)
 
-                # update the readme.txt file
+                # create a new readme.txt file
                 with open(readme_path,'w') as fid:
                     fid.write("# measures data populated by casaconfig\nversion : %s\ndate : %s" % (target, datetime.today().strftime('%Y-%m-%d')))
 
-                print_log_messages('measures_update updated measures data at %s' % path, logger)
+                print_log_messages('  ... measures data update at %s' % path, logger)
             
             # closing out the do_update
 
@@ -292,8 +345,10 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
         lock_fd.truncate(0)
         
     except Exception as exc:
-        print_log_messages("ERROR! : Unexpected exception while updating measures at %s" % path, logger, True)
-        print_log_messages("ERROR! : %s" % exc, logger, True)
+        msgs = []
+        msgs.append("ERROR! : Unexpected exception while updating measures at %s" % path)
+        msgs.append("ERROR! : %s" % exc)
+        print_log_messages(msgs, logger, True)
         # leave the contents of the lock file as is to aid in debugging
         
     # if the lock file is not closed, do that now to release the lock

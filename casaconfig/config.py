@@ -124,14 +124,9 @@ for __v in __defaults:
             if globals()[__v] is not None:
                 globals()[__v] = __os.path.abspath(__os.path.expanduser(globals()[__v]))
             else:
-                # debugging for now
-                print("None value seen while expanding path-like fields for config parameter %s" % __v)
-                print("__loaded_config_files : ")
-                for __f in __loaded_config_files:
-                    print("   %s" % __f)
-                print("__config_files : ")
-                for __f in __config_files:
-                    print("  %s" % __f)
+                pass
+                # debugging
+                # print("None value seen while expanding path-like fields for config parameter %s" % __v)
                 
 def load_success( ):
     return __loaded_config_files
