@@ -221,9 +221,6 @@ def pull_data(path=None, version=None, force=False, logger=None):
             if readmeInfo is not None:
                 currentVersion = readmeInfo['version']
                 currentDate = readmeInfo['date']
-                print('readmeInfo is not None')
-                print('currentVersion : %s' % currentVersion)
-                print('currentDate : %s' % currentDate)
                 if ((currentVersion == version) and (not force)):
                     if expectedMeasuresVersion is not None:
                         # this is a release pull and the measures version must also match
