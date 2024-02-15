@@ -38,6 +38,13 @@ import pkgutil as __pkgutil
 from .private import io_redirect as _io
 from .private.get_argparser import get_argparser as __get_argparser
 
+def _standard_config_path( ):
+    standard_siteconfig_paths = [ '/opt/casa/casasiteconfig.py',
+                                  '/home/casa/casasiteconfig.py' ]
+    for f in standard_siteconfig_paths:
+        if __os.path.isfile(f):
+            return [ f ]
+    return [ 'casasiteconfig' ]
 
 ## list of config variables
 __defaults = [ x for x in dir(_config_defaults) if not x.startswith('_') ]
@@ -46,7 +53,7 @@ __defaults = [ x for x in dir(_config_defaults) if not x.startswith('_') ]
 __parser = __get_argparser()
 __flags,__args = __parser.parse_known_args(__sys.argv)
 __user_config = [ ] if __flags.noconfig else [ __flags.configfile ]
-__site_config = [ ] if __flags.nositeconfig else [ 'casasiteconfig' ]
+__site_config = [ ] if __flags.nositeconfig else _standard_config_path( )
 
 ## files to be evaluated/loaded
 __config_files = [ * __site_config , *__user_config ]
