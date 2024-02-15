@@ -38,9 +38,23 @@ import pkgutil as __pkgutil
 from .private import io_redirect as _io
 from .private.get_argparser import get_argparser as __get_argparser
 
+## dictionary to keep track of errors encountered
+__errors_encountered = { }
+
 def _standard_config_path( ):
     standard_siteconfig_paths = [ '/opt/casa/casasiteconfig.py',
                                   '/home/casa/casasiteconfig.py' ]
+
+    if 'CASASITECONFIG' in __os.environ:
+        f = __os.environ.get('CASASITECONFIG')
+        if __os.path.isfile(f):
+            return [ f ]
+        else:
+            global __errors_encountered
+            __errors_encountered[f] = f'CASASITECONFIG environment variable set to a path ({f}) which does not exist.'
+            print( f'Warning: {__errors_encountered[f]}', file=__sys.stderr )
+            return [ ]
+
     for f in standard_siteconfig_paths:
         if __os.path.isfile(f):
             return [ f ]
@@ -58,7 +72,6 @@ __site_config = [ ] if __flags.nositeconfig else _standard_config_path( )
 ## files to be evaluated/loaded
 __config_files = [ * __site_config , *__user_config ]
 __loaded_config_files = [ __file__ ]
-__errors_encountered = { }
 
 ## evaluate config files
 ## ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
