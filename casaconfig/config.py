@@ -47,11 +47,12 @@ def _standard_config_path( ):
 
     if 'CASASITECONFIG' in __os.environ:
         f = __os.environ.get('CASASITECONFIG')
-        if __os.path.isfile(f):
+        # if set, it must be a fully qualified file (leading '/') that exists
+        if f.find('/')==0 and __os.path.isfile(f):
             return [ f ]
         else:
             global __errors_encountered
-            __errors_encountered[f] = f'CASASITECONFIG environment variable set to a path ({f}) which does not exist.'
+            __errors_encountered[f] = f'CASASITECONFIG environment variable set to a path ({f}) which does not exist or is not fully qualified.'
             print( f'Warning: {__errors_encountered[f]}', file=__sys.stderr )
             return [ ]
 
@@ -66,7 +67,7 @@ __defaults = [ x for x in dir(_config_defaults) if not x.startswith('_') ]
 ## get the ArgumentParser with the arguments needed by casaconfig, help is turned off
 __parser = __get_argparser()
 __flags,__args = __parser.parse_known_args(__sys.argv)
-__user_config = [ ] if __flags.noconfig else [ __flags.configfile ]
+__user_config = [ ] if __flags.noconfig else [ __os.path.abspath(os.path.expanduser( __flags.configfile )) ]
 __site_config = [ ] if __flags.nositeconfig else _standard_config_path( )
 
 ## files to be evaluated/loaded
@@ -82,7 +83,7 @@ __loaded_config_files = [ __file__ ]
 ##
 _module_execution = len(__sys.argv) > 0 and __sys.argv[0] == '-m'
 with _io.all_redirected(to=__os.devnull) if _module_execution else _io.no_redirect( ):
-    for __f in [ __os.path.expanduser(f) for f in __config_files ]:
+    for __f in [ f in __config_files ]:
         if __f.find('/') >= 0:
             if __os.path.exists(__f):
                  ## config file is a fully qualified path

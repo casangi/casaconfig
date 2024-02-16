@@ -96,8 +96,7 @@ def get_data_info(path=None, logger=None, type=None):
         path = _config.measurespath
 
     if path is None:
-        # it's not being set in a config file, probably casasiteconfig.py is being used but has not been edited
-        print_log_messages('path is None and has not been set in config.meausrespath (probably casasiteconfig.py). Provide a valid path and retry.', logger, True)
+        print_log_messages('path is None and has not been set in config.measurespath. Provide a valid path and retry.', logger, True)
         return None
     
     path = os.path.abspath(os.path.expanduser(path))

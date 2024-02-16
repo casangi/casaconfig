@@ -103,8 +103,7 @@ def pull_data(path=None, version=None, force=False, logger=None):
         path = _config.measurespath
 
     if path is None:
-        # it's not being set in a config file, probably casasiteconfig.py is being use but has not been edited
-        print_log_messages('path is None and has not been set in config.measurespath (probably casasiteconfig.py). Provide a valid path and retry.', logger, True)
+        print_log_messages('path is None and has not been set in config.measurespath. Provide a valid path and retry.', logger, True)
         return
 
     # when a specific version is requested then the measures readme.txt that is part of that version

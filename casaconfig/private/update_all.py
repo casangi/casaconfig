@@ -64,7 +64,7 @@ def update_all(path=None, logger=None, force=False):
         path = config.measurespath
 
         if path is None:
-            print_log_messages("config.measurespath is None. Edit your config.py or the casasiteconfig.py to set measurespath to an appropriate location,", logger, True)
+            print_log_messages("config.measurespath is None. Edit your config.py to set measurespath to an appropriate location,", logger, True)
             return
 
     if not os.path.exists(path):

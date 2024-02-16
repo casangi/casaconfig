@@ -133,8 +133,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
         path = _config.measurespath
 
     if path is None:
-        # it's not being set in a config file, probably casasiteconfig.py is being use but has not been edited
-        print_log_messages('path is None and has not been set in config.measurespath (probably casasiteconfig.py). Provide a valid path and retry.', logger, True)
+        print_log_messages('path is None and has not been set in config.measurespath. Provide a valid path and retry.', logger, True)
         return
 
     path = os.path.expanduser(path)
@@ -213,9 +212,11 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
         # don't do anything unless the Observatories table is already installed as expected
         obsTabPath = os.path.join(path,'geodetic/Observatories')
         if not os.path.isdir(obsTabPath):
-            print("Error: the Observatories table was not found as expected in %s" % path, logger, True)
-            print("Either install casarundata first or set use_astron_obs_table and force to be True when using measures_update.", logger, True)
-            print("Note that the Observatories table provided in the Astron measures tarfile is not the same as that maintained by CASA", logger, True)
+            msgs = []
+            msgs.append("Error: the Observatories table was not found as expected in %s" % path)
+            msgs.append("Either install casarundata first or set use_astron_obs_table and force to be True when using measures_update.")
+            msgs.append("Note that the Observatories table provided in the Astron measures tarfile is not the same as that maintained by CASA")
+            print_log_messages(msgs, logger, True)
             return
         
     # path must be writable with execute bit set
