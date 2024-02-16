@@ -11,7 +11,7 @@
 # Set this to point to the location where the site maintained casarundata can be found
 # by default datapath will include measurespath
 
-measurespath = <path_to_installed_casarundata>
+measurespath = "/path/to/installed/casarundata"
 
 # turn off all auto updates of data
 
