@@ -105,7 +105,6 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
     """
 
     import os
-    from datetime import datetime
 
     from .data_available import data_available
     from .print_log_messages import print_log_messages
@@ -180,7 +179,7 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
     if dataReadmeInfo['age'] is not None:
         ageRecent = dataReadmeInfo['age'] < 1.0
 
-    if currentVersion is 'unknown':
+    if currentVersion == 'unknown':
         msgs = []
         msgs.append('The data update path appears to be casarundata but no readme.txt file was found')
         msgs.append('A data update is not possible but CASA use of this data may be OK.')
@@ -323,7 +322,7 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
 
         if do_update:
             do_pull_data(path, requestedVersion, installed_files, currentVersion, currentDate, logger)
-            if namedVersion is not None:
+            if namedVersion:
                 # a specific version has been requested, set the times on the measures readme.txt to now to avoid
                 # a default update of the measures data without using the force argument
                 measuresReadmePath = os.path.join(path,'geodetic/readme.txt')

@@ -268,7 +268,8 @@ def pull_data(path=None, version=None, force=False, logger=None):
                 # a default update of the measures data without using the force argument
                 measuresReadmePath = os.path.join(path,'geodetic/readme.txt')
                 os.utime(measuresReadmePath)
-                        
+
+                
         # truncate the lock filed
         lock_fd.truncate(0)
         

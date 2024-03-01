@@ -25,6 +25,8 @@ parser.add_argument( "--reference-testing", action='store_const', const=True, de
                      help="set measurespath to the casarundata when this version was produced, used for testing purposes")
 parser.add_argument( "--current-data", dest='currentdata', action='store_const', const=True, default=False,
                      help="print out a summary of the current casarundata and measures data installed in measurespath and then exit")
+parser.add_argument( "--summary", dest='summary', action='store_const', const=True, default=False,
+                     help="print out a summary of casaconfig data handling and the exit")
 parser.add_argument("--force", dest='force', action='store_const', const=True, default=False,
                     help="force an update using the force=True option to update_all, data_update, and measures_update")
 
@@ -38,6 +40,8 @@ import casaconfig
 # make sure measurespath reflects any command line value
 if flags.measurespath is None:
     flags.measurespath = config.measurespath
+else:
+    config.measurespath = flags.measurespath
 
 # watch for measurespath of None, that likely means that casasiteconfig.py is in use and this has not been set. It can't be used then.
 if flags.measurespath is None:
@@ -79,7 +83,10 @@ if flags.currentdata:
             print('measures version %s installed on %s' % (currentVersion, currentDate))
  
     # ignore any other arguments
-
+elif flags.summary:
+    from casaconfig.private.summary import summary
+    summary(config)
+    # ignore any other arguments
 else:
     if flags.referencetesting:
         print("reference testing using pull_data and 'release' version into %s" % measurespath)

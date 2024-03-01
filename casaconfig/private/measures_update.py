@@ -281,7 +281,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
             if force:
                 print_log_messages('A measures update has been requested by the force argument', logger)
 
-            print_log_messages(' ... connecting to ftp.astron.nl ...', logger)
+            print_log_messages('  ... connecting to ftp.astron.nl ...', logger)
 
             ftp = FTP('ftp.astron.nl')
             rc = ftp.login()
