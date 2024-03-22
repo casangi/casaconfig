@@ -94,26 +94,26 @@ def data_update(path=None, version=None, force=False, logger=None, auto_update_r
     **Note:** the most recent casarundata may not include the most recent measures data. A data_update
     is typically followed by a measures_update.
 
-    Parameters:
-       path (str=None): Folder path to update. Must contain a valid readme.txt. If not set then config.measurespath is used.
-       version (str=None): Version of casarundata to retrieve (usually in the form of casarundata-x.y.z.tar.gz, see data_available()). Default None retrieves the latest.
-       force (bool=False): If True, always re-download the casarundata. Default False will not download casarundata if updated within the past day unless the version parameter is specified and different from what was last downloaded.
-       logger (casatools.logsink=None): Instance of the casalogger to use for writing messages. Default None writes messages to the terminal.
-       auto_update_rules (bool=False): If True then the user must be the owner of path, version must be None, and force must be False.
-       verbose (int): Level of output, 0 is none, 1 is to logger, 2 is to logger and terminal, defaults to casaconfig_verbose in the config dictionary.
+    Parameters
+       - path (str=None) - Folder path to update. Must contain a valid readme.txt. If not set then config.measurespath is used.
+       - version (str=None) - Version of casarundata to retrieve (usually in the form of casarundata-x.y.z.tar.gz, see data_available()). Default None retrieves the latest.
+       - force (bool=False) - If True, always re-download the casarundata. Default False will not download casarundata if updated within the past day unless the version parameter is specified and different from what was last downloaded.
+       - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal.
+       - auto_update_rules (bool=False) - If True then the user must be the owner of path, version must be None, and force must be False.
+       - verbose (int) - Level of output, 0 is none, 1 is to logger, 2 is to logger and terminal, defaults to casaconfig_verbose in the config dictionary.
         
-    Returns:
+    Returns
        None
     
-    Raises:
-       AutoUpdatesNotAllowed : raised when path does not exist as a directory or is not owned by the user
-       BadLock : raised when the lock file was not empty when an attempt was made to obtain the lock
-       BadReadme : raised when the readme.txt file at path did not contain the expected list of installed files or was incorrectly formatted
-       NoReadme : raised when the readme.txt file is not found at path (path also may not exist)
-       NotWritable : raised when the user does not have permission to write to path
-       RemoteError : raised by data_available when the list of available data versions could not be fetched
-       UnsetMeasurespath : raised when path is None and measurespath has not been set in config.
-       Exception: raised when there was an unexpected exception while populating path
+    Raises
+       - casaconfig.AutoUpdatesNotAllowed - raised when path does not exist as a directory or is not owned by the user
+       - casaconfig.BadLock - raised when the lock file was not empty when an attempt was made to obtain the lock
+       - casaconfig.BadReadme - raised when the readme.txt file at path did not contain the expected list of installed files or was incorrectly formatted
+       - casaconfig.NoReadme - raised when the readme.txt file is not found at path (path also may not exist)
+       - casaconfig.NotWritable - raised when the user does not have permission to write to path
+       - casaconfig.RemoteError - raised by data_available when the list of available data versions could not be fetched
+       - casaconfig.UnsetMeasurespath - raised when path is None and measurespath has not been set in config.
+       - Exception - raised when there was an unexpected exception while populating path
 
     """
 

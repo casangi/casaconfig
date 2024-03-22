@@ -39,16 +39,16 @@ def do_auto_updates(configDict, logger=None, verbose=None):
 
     See data_update and measures_update for additional details about exceptions
 
-    Paramters:
-       configDict (dict): A config dictionary previously set. 
-       logger (casatools.logsink=None): Instance of the casalogger to use for writing messages. Default None writes messages to the terminal.
-       verbose (int): Level of output, 0 is none, 1 is to logger, 2 is to logger and terminal, defaults to casaconfig_verbose in the config dictionary.
+    Paramters
+       - configDict (dict) - A config dictionary previously set. 
+       - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal.
+       - verbose (int) - Level of output, 0 is none, 1 is to logger, 2 is to logger and terminal, defaults to casaconfig_verbose in the config dictionary.
 
-    Returns:
+    Returns
        None
 
-    Raises:
-      UnsetMeasurespath: raised when measurespath is None in config
+    Raises
+       - casaconfig.UnsetMeasurespath - raised when measurespath is None in config
 
     """
 

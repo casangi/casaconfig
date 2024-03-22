@@ -102,26 +102,26 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     is not empty or the readme.txt file can not be read. This use of force should be used
     with caution.
 
-    Parameters:
-       path (str=None): Folder path to place updated measures data. Must contain a valid geodetic/readme.txt. If not set then config.measurespath is used.
-       version (str=None): Version of measures data to retrieve (usually in the form of yyyymmdd-160001.ztar, see measures_available()). Default None retrieves the latest.
-       force (bool=False): If True, always re-download the measures data. Default False will not download measures data if updated within the past day unless the version parameter is specified and different from what was last downloaded.
-       logger (casatools.logsink=None): Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
-       auto_update_rules (bool=False): If True then the user must be the owner of path, version must be None, and force must be False.
-       verbose (int=None): Level of output, 0 is none, 1 is to logger, 2 is to logger and terminal, defaults to casaconfig_verbose in config dictionary.
+    Parameters
+       - path (str=None) - Folder path to place updated measures data. Must contain a valid geodetic/readme.txt. If not set then config.measurespath is used.
+       - version (str=None) - Version of measures data to retrieve (usually in the form of yyyymmdd-160001.ztar, see measures_available()). Default None retrieves the latest.
+       - force (bool=False) - If True, always re-download the measures data. Default False will not download measures data if updated within the past day unless the version parameter is specified and different from what was last downloaded.
+       - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
+       - auto_update_rules (bool=False) - If True then the user must be the owner of path, version must be None, and force must be False.
+       - verbose (int=None) - Level of output, 0 is none, 1 is to logger, 2 is to logger and terminal, defaults to casaconfig_verbose in config dictionary.
         
-    Returns:
+    Returns
        None
 
-    Raises:
-       AutoUpdatesNotAllowed: raised when path does not exists as a directory or is not owned by the user when auto_update_rules is True
-       BadLock: raised when the lock file was not empty when found
-       BadReadme: raised when something unexpected is found in the readme or the readme changed after an update is in progress
-       NoReadme : raised when the readme.txt file is not found at path (path also may not exist)
-       NotWritable: raised when the user does not have permission to write to path
-       RemoteError: raised by measures_available when the remote list of measures could not be fetched
-       UnsetMeasurespath: raised when path is None and has not been set in config
-       Exception: raised when something unexpected happened while updating measures
+    Raises
+       casaconfig.AutoUpdatesNotAllowed - raised when path does not exists as a directory or is not owned by the user when auto_update_rules is True
+       casaconfig.BadLock - raised when the lock file was not empty when found
+       casaconfig.BadReadme - raised when something unexpected is found in the readme or the readme changed after an update is in progress
+       casaconfig.NoReadme - raised when the readme.txt file is not found at path (path also may not exist)
+       casaconfig.NotWritable - raised when the user does not have permission to write to path
+       casaconfig.RemoteError - raised by measures_available when the remote list of measures could not be fetched
+       casaconfig.UnsetMeasurespath - raised when path is None and has not been set in config
+       Exception - raised when something unexpected happened while updating measures
     
     """
     import os

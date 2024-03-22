@@ -29,16 +29,16 @@ def get_data_lock(path, fn_name):
 
     This function is intended for internal casaconfig use.
 
-    Parameters:
-       path (str): The location where 'data_update.log' is to be found.
-       fn_name (str): A string giving the name of the calling function to be recorded in the lock file.
+    Parameters
+       - path (str) - The location where 'data_update.log' is to be found.
+       - fn_name (str) - A string giving the name of the calling function to be recorded in the lock file.
 
     Returns:
-       fd: the open file descriptor holding the lock. Close this file descriptor to release the lock.
+       - the open file descriptor holding the lock. Close this file descriptor to release the lock.
 
     Raises:
-        BadLock: raised when the path to the lock file does not exist or the lock file is not empty as found
-        Exception: an unexpected exception was seen while writing the lock information to the file
+        - casaconfig.BadLock - raised when the path to the lock file does not exist or the lock file is not empty as found
+        - Exception - an unexpected exception was seen while writing the lock information to the file
 
     """
 

@@ -29,11 +29,11 @@ def read_readme(path):
 
     The version string and date are stripped of leading and trailing whitespace.
 
-    Parameters:
-       path (str): the path to the file to be read
+    Parameters
+       - path (str) - the path to the file to be read
 
-    Returns:
-       dict: Dictionary of 'version' (the version string), 'date' (the date string),
+    Returns
+       Dictionary of 'version' (the version string), 'date' (the date string),
              'extra' (a list of any extra lines found). The return value is None on error.
     """
 

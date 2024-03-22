@@ -83,22 +83,22 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
     what versions are available. There is no check on when the data were last updated before
     calling data_available (as there is in the two update functions). 
 
-    Parameters:
-       path (str): Folder path to place casarundata contents. It must be empty or not exist or contain a valid, previously installed version. If not set then config.measurespath is used.
-       version (str=None): casadata version to retrieve. Default None gets the most recent version.
-       force (bool=False): If True, re-download and install the data even when the requested version matches what is already installed. Default False will not download data if the installed version matches the requested version.
-       logger (casatools.logsink=None): Instance of the casalogger to use for writing messages. Messages are always written to the terminal. Default None does not write any messages to a logger.
-       verbose (int): Level of output, 0 is none, 1 is to logger, 2 is to logger and terminal, defaults to casaconfig_verbose in the config dictionary.
+    Parameters
+       - path (str) - Folder path to place casarundata contents. It must be empty or not exist or contain a valid, previously installed version. If not set then config.measurespath is used.
+       - version (str=None) - casadata version to retrieve. Default None gets the most recent version.
+       - force (bool=False) - If True, re-download and install the data even when the requested version matches what is already installed. Default False will not download data if the installed version matches the requested version.
+       - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Messages are always written to the terminal. Default None does not write any messages to a logger.
+       - verbose (int) - Level of output, 0 is none, 1 is to logger, 2 is to logger and terminal, defaults to casaconfig_verbose in the config dictionary.
 
-    Returns:
+    Returns
        None
 
-    Raises:
-       BadLock: raised when the lock file is not empty when a lock is requested
-       BadReadme: raised when the readme.txt file found at path does not contain the expected list of installed files or there was an unexpected change while the data lock is on
-       NotWritable: raised when the user does not have write permission to path
-       RemoteError : raised by data_available when the list of available data versions could not be fetched
-       UnsetMeasurespath: raised when path is None and and measurespath has not been set in config.
+    Raises
+       - casaconfig.BadLock - raised when the lock file is not empty when a lock is requested
+       - casaconfig.BadReadme - raised when the readme.txt file found at path does not contain the expected list of installed files or there was an unexpected change while the data lock is on
+       - casaconfig.NotWritable - raised when the user does not have write permission to path
+       - casaconfig.RemoteError - raised by data_available when the list of available data versions could not be fetched
+       - casaconfig.UnsetMeasurespath - raised when path is None and and measurespath has not been set in config.
 
     """
 

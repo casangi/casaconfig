@@ -25,10 +25,10 @@ def set_casacore_path(path=None):
     the casacore data directory can be found by casacore users. It sets the value of that
     parameter to the casacore data location, replacing any previously set value.
 
-    Parameters:
-       path (string=None): path to the desired data directory. Default None uses the included data directory from this package
+    Parameters
+       - path (string=None) - path to the desired data directory. Default None uses the included data directory from this package
 
-    Returns:
+    Returns
        None
 
     """

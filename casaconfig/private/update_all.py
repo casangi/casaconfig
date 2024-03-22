@@ -47,12 +47,12 @@ def update_all(path=None, logger=None, force=False, verbose=None):
     Use of update_all after CASA has started should typically be followed by a restart 
     so that any changes are seen by the tools and tasks that use this data.
 
-    Parameters:
-       path (str=None): Folder path to place casarundata contents. It must not exist, or be empty, or contain a valid, previously installed version. If it exists, it must be owned by the user. Default None uses the value of measurespath set by importing config.py.
-       logger (casatools.logsink=None): Instance of the casalogger to use for writing messages. Messages are always written to the terminal. Default None does not write any messages to a logger.
-       verbose (int): Level of output, 0 is none, 1 is to logger, 2 is to logger and terminal, defaults to casaconfig_verbose in the config dictionary.
+    Parameters
+       - path (str=None) - Folder path to place casarundata contents. It must not exist, or be empty, or contain a valid, previously installed version. If it exists, it must be owned by the user. Default None uses the value of measurespath set by importing config.py.
+       - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Messages are always written to the terminal. Default None does not write any messages to a logger.
+       - verbose (int) - Level of output, 0 is none, 1 is to logger, 2 is to logger and terminal, defaults to casaconfig_verbose in the config dictionary.
 
-    Returns:
+    Returns
        None
 
     """

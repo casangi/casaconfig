@@ -22,10 +22,10 @@ def summary(configDict = None):
     value of the measurespath config value is shown, the installed data versions are shown
     (casarundata and measures) and any release version information is shown.
 
-    Parameters:
-        configDict (dict): a config dictionary. If None this is imported from casaconfig.
+    Parameters
+        - configDict (dict) - a config dictionary. If None this is imported from casaconfig.
 
-    Returns:
+    Returns
         None
 
     """

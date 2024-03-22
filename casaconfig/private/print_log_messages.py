@@ -27,10 +27,10 @@ def print_log_messages(msg, logger, is_err=False, verbose=2):
     This function is intended for internal casaconfig use.
 
     Parameters
-       msg (str): The message to print and optionally log.
-       logger (casatools.logsink): Instance of the casalogger to use. Not used if None.
-       is_err (bool=False): When False, output goes to sys.stdout and logged as INFO level. When True, output goes to sys.stderr and logged as SEVERE
-       verbose (int=2): When < 2 then msg is only printed if there is no logger, otherwise it's just logged
+       - msg (str) - The message to print and optionally log.
+       - logger (casatools.logsink) - Instance of the casalogger to use. Not used if None.
+       - is_err (bool=False) - When False, output goes to sys.stdout and logged as INFO level. When True, output goes to sys.stderr and logged as SEVERE
+       - verbose (int=2) - When < 2 then msg is only printed if there is no logger, otherwise it's just logged
 
     Returns
        None

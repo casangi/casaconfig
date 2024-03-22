@@ -97,6 +97,10 @@ try:
             casaconfig.pull_data(measurespath,'release')
             # ignore all other options
         else:
+            # watch for nothing actually set
+            if not flags.updateall and not flags.pulldata and not flags.dataupdate and not flags.measuresupdate:
+                parser.print_help()
+                sys.exit(1)
             # the update options, update all does everything, no need to invoke anything else
             print("Checking for updates into %s" % measurespath)
             if flags.updateall:

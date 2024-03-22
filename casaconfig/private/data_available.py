@@ -29,15 +29,15 @@ def data_available():
     changing casaconfig functions that use those tarballs). The full filename is
     the casarundata version expected in casaconfig functions.
 
-    Parameters:
+    Parameters
        None
     
-    Returns:
-       list: version names returned as list of strings
+    Returns
+       list - version names returned as list of strings
 
-    Raises:
-       casaconfig.RemoteError: Raised when there is an error fetching some remote content
-       Exception: Unexpected exception while getting list of available casarundata versions
+    Raises
+       - casaconfig.RemoteError - Raised when there is an error fetching some remote content
+       - Exception - Unexpected exception while getting list of available casarundata versions
 
     """
 

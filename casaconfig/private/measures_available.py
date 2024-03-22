@@ -25,15 +25,15 @@ def measures_available():
     of the values in that list if set (otherwise the most recent version
     in this list is used).
 
-    Parameters:
+    Parameters
        None
     
-    Returns:
-       list: version names returned as list of strings
+    Returns
+       version names returned as list of strings
 
     Raises:
-       RemoteError: raised when when a socket.gaierror is seen, likely due to no network connection
-       Exception: raised when any unexpected exception happens
+       - casaconfig.RemoteError - raised when when a socket.gaierror is seen, likely due to no network connection
+       - Exception: raised when any unexpected exception happens
 
     """
     from ftplib import FTP
