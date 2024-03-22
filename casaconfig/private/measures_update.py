@@ -15,13 +15,17 @@
 this module will be included in the api
 """
 
-def measures_update(path=None, version=None, force=False, logger=None, auto_update_rules=False, use_astron_obs_table=False):
+def measures_update(path=None, version=None, force=False, logger=None, auto_update_rules=False, use_astron_obs_table=False, verbose=None):
     """
     Update or install the IERS data used for measures calculations from the ASTRON server at path.
     
     Original data source used by ASTRON is here: https://www.iers.org/IERS/EN/DataProducts/data.html
 
     If no update is necessary then this function will silently return.
+
+    The verbose argument controls the level of information provided when this function when the data
+    are unchanged for expected reasons. A level of 0 prints and logs nothing. A
+    value of 1 logs the information and a value of 2 logs and prints the information.
 
     CASA maintains a separate Observatories table which is available in the casarundata
     collection through pull_data and data_update. The Observatories table found at ASTRON
@@ -98,16 +102,26 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     is not empty or the readme.txt file can not be read. This use of force should be used
     with caution.
 
-
-    Parameters
-       - path (str=None) - Folder path to place updated measures data. Must contain a valid geodetic/readme.txt. If not set then config.measurespath is used.
-       - version (str=None) - Version of measures data to retrieve (usually in the form of yyyymmdd-160001.ztar, see measures_available()). Default None retrieves the latest.
-       - force (bool=False) - If True, always re-download the measures data. Default False will not download measures data if updated within the past day unless the version parameter is specified and different from what was last downloaded.
-       - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
-       - auto_update_rules (bool=False) - If True then the user must be the owner of path, version must be None, and force must be False.
+    Parameters:
+       path (str=None): Folder path to place updated measures data. Must contain a valid geodetic/readme.txt. If not set then config.measurespath is used.
+       version (str=None): Version of measures data to retrieve (usually in the form of yyyymmdd-160001.ztar, see measures_available()). Default None retrieves the latest.
+       force (bool=False): If True, always re-download the measures data. Default False will not download measures data if updated within the past day unless the version parameter is specified and different from what was last downloaded.
+       logger (casatools.logsink=None): Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
+       auto_update_rules (bool=False): If True then the user must be the owner of path, version must be None, and force must be False.
+       verbose (int=None): Level of output, 0 is none, 1 is to logger, 2 is to logger and terminal, defaults to casaconfig_verbose in config dictionary.
         
-    Returns
+    Returns:
        None
+
+    Raises:
+       AutoUpdatesNotAllowed: raised when path does not exists as a directory or is not owned by the user when auto_update_rules is True
+       BadLock: raised when the lock file was not empty when found
+       BadReadme: raised when something unexpected is found in the readme or the readme changed after an update is in progress
+       NoReadme : raised when the readme.txt file is not found at path (path also may not exist)
+       NotWritable: raised when the user does not have permission to write to path
+       RemoteError: raised by measures_available when the remote list of measures could not be fetched
+       UnsetMeasurespath: raised when path is None and has not been set in config
+       Exception: raised when something unexpected happened while updating measures
     
     """
     import os
@@ -123,6 +137,9 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     import certifi
     import fcntl
 
+    from casaconfig import measures_available
+    from casaconfig import AutoUpdatesNotAllowed, UnsetMeasurespath, RemoteError, NotWritable, BadReadme, BadLock
+
     from .print_log_messages import print_log_messages
     from .get_data_lock import get_data_lock
     from .get_data_info import get_data_info
@@ -133,8 +150,11 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
         path = _config.measurespath
 
     if path is None:
-        print_log_messages('path is None and has not been set in config.measurespath. Provide a valid path and retry.', logger, True)
-        return
+        raise UnsetMeasurespath('measures_update: path is None and has not been set in config.measurespath. Provide a valid path and retry.')
+
+    if verbose is None:
+        from .. import config as _config
+        verbose = _config.casaconfig_verbose
 
     path = os.path.expanduser(path)
 
@@ -146,11 +166,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
             print_log_messages('force must be False when auto_update_rules is True', logger, True)
             return
         if (not os.path.isdir(path)) or (os.stat(path).st_uid != os.getuid()):
-            msgs = []
-            msgs.append("Warning: path must exist as a directory and it must be owned by the user, path = %s" % path)
-            msgs.append("Warning: no measures auto update is possible on this path by this user.")
-            print_log_messages(msgs, logger, False)
-            return
+            raise AutoUpdatesNotAllowed("measures_update: path must exist as a directory and it must be owned by the user, path = %s" % path)
     
     if not os.path.exists(path):
         # make dirs all the way down, if possible
@@ -171,18 +187,20 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     if not force:
         # don't check for new version if the age is less than 1 day
         if version is None and ageRecent:
-            # normal use is silent, this line is useful during debugging
-            # print_log_messages('measures_update latest version checked recently in %s, using version %s' % (path, current), logger)
+            if verbose > 0:
+                print_log_messages('measures_update: version installed or checked less than 1 day ago, nothing updated or checked', logger, verbose=verbose)
             return
         
         # don't overwrite something that looks bad unless forced to do so
         if current == 'invalid':
-            print_log_messages('The measures readme.txt file could not be read as expected, an update can not proceed unless force is True', logger, True)
-            return
+            raise NoReadme('measures_update: no measures readme.txt file found at %s. Nothing updated or checked.' % path)
+        
+        if current == 'error':
+            raise BadReadme('measures_update: the measures readme.txt file at %s could not be read as expected, an update can not proceed unless force is True' % path)
 
         # don't overwrite something that looks like valid measures data unless forced to do so
         if current == 'unknown':
-            print_log_messages('The measures data at %s is not maintained by casaconfig and so it can not be updated unless force is True' % path, logger, True)
+            print_log_messages('measures_update: the measures data at %s is not maintained by casaconfig and so it can not be updated unless force is True' % path, logger)
             return
 
         checkVersion = version
@@ -190,22 +208,21 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
             # get the current most recent version
             try:
                 checkVersion = measures_available()[-1]
+            except RemoteError as exc:
+                # no network, no point in continuing, just reraise
+                raise exc                
             except:
                 # unsure what happened, leave it at none, which will trigger an update attempt, which might work
                 pass
 
         # don't re-download the same data
         if (checkVersion is not None) and (checkVersion == current):
-            # normal use is silent, this line is useful during debugging
-            # print_log_messages('measures_update requested version already installed in %s' % path, logger)
+            if verbose > 0:
+                print_log_messages('measures_update: requested version already installed in %s' % path, logger, verbose=verbose)
             # update the age of the readme to now
-            try:
-                readme_path = os.path.join(path,'geodetic/readme.txt')
-                # readme_path should already exist if it's here
-                os.utime(readme_path)
-            except:
-                # unsure what happened, everything otherwise is fine if we got here, ignore this error
-                pass
+            readme_path = os.path.join(path,'geodetic/readme.txt')
+            # readme_path should already exist if it's here
+            os.utime(readme_path)
             
             return
 
@@ -221,30 +238,21 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
         
     # path must be writable with execute bit set
     if (not os.access(path, os.W_OK | os.X_OK)) :
-        print_log_messages('No permission to write to the measures path, cannot update : %s' % path, logger, True)
-        return
+        raise NotWritable('measures_update: No permission to write to path, cannot update : %s' % path)
 
     # an update needs to happen
 
     # lock the measures_update.lock file
     lock_fd = None
+    clean_lock = True    # set to false if the contents are actively being u pdate and the lock file should not be cleaned one exception
     try:
         print_log_messages('measures_update ... acquiring the lock ... ', logger)
 
+        # the BadLock exception that may happen here is caught below
         lock_fd = get_data_lock(path, 'measures_update')
-        # if lock_fd is None it means the lock file was not empty - because we know that path exists at this point
-        if lock_fd is None:
-            # using a list of messages results in a better printing if the logger is redirected to the terminal
-            msgs = []
-            msgs.append('The lock file at %s is not empty.' % path)
-            msgs.append('A previous attempt to update path may have failed or exited prematurely.')
-            msgs.append('Remove the lock file and set force to True with the desired version (default to most recent).')
-            msgs.append('It may be best to completely repopulate path using pull_data and measures_update.')
-            print_log_messages(msgs, logger, True)
-            return
 
         do_update = force
-
+        
         if not do_update:
             # recheck the readme file, another update may have already happened before the lock was obtained
             current = None
@@ -257,22 +265,19 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
                     ageRecent = readmeInfo['age'] < 1.0
 
             if (version is not None) and (version == current):
-                # no update will be done, version is as requested - not silent here because the lock is in use
+                # no update will be done, version is as requested - always verbose here because the lock is in use
                 print_log_messages('The requested measures version is already installed in %s, using version %s' % (path, current), logger)
             elif (version is None) and ageRecent:
-                # no update will be done, it's already been checked or updated recently - not silent here because the lock is in use
+                # no update will be done, it's already been checked or updated recently - always verbose here because the lock is in use
                 print_log_messages('The latest measures version was checked recently in %s, using version %s' % (path, current), logger)
             else:
                 # final check for problems before updating
                 if not force and readmeInfo is not None and (version=='invalid' or version=='unknown'):
                     # at this point, this indicates something is unexpectedly wrong, do not continue
-                    # using a list of messages results in a better printing if the logger is redirected to the terminal
-                    msgs = []
-                    msgs.append('Something unexpected has changed in the measures path location, and measures_update can not continue')
-                    msgs.append('A previous measures_update may have exited unexpectedly')
-                    msgs.append('It may be necessary to reinstall the casarundata as well as the measures data if %s is the correct path' % path)
-                    print_log_messages(msgs, logger, True)
-                    # update is already turned off, the lock file will be cleaned up on exit
+                    # this exception is caught below
+                    # do not clean up the lock file
+                    clean_lock = False
+                    raise BadReadme('measures_update: something unexpected has changed in the path location, can not continue')
                 else:
                     # an update is needed
                     do_update = True
@@ -283,6 +288,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
 
             print_log_messages('  ... connecting to ftp.astron.nl ...', logger)
 
+            clean_lock = False
             ftp = FTP('ftp.astron.nl')
             rc = ftp.login()
             rc = ftp.cwd('outgoing/Measures')
@@ -293,7 +299,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
             # but that isn't checked - this could install a version that's already installed
             target = files[-1] if version is None else version
             if target not in files:
-                print_log_messages('measures_update cant find specified version %s' % target, logger, True)
+                print_log_messages("measures_update can't find specified version %s" % target, logger, True)
 
             else:
                 # there are files to extract, make sure there's no past measures.ztar from a failed previous install
@@ -337,23 +343,45 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
                 with open(readme_path,'w') as fid:
                     fid.write("# measures data populated by casaconfig\nversion : %s\ndate : %s" % (target, datetime.today().strftime('%Y-%m-%d')))
 
-                print_log_messages('  ... measures data update at %s' % path, logger)
+                print_log_messages('  ... measures data updated at %s' % path, logger)
+
+                clean_lock = True
             
             # closing out the do_update
 
         # closing out the try block
-        # truncate the lock file
-        lock_fd.truncate(0)
+
+    except BadLock as exc:
+        # the path is known to exist so this means that the lock file was not empty and it's not locked
+        msgs = [str(exc)]
+        msgs.append('The lock file at %s is not empty.' % path)
+        msgs.append('A previous attempt to update path may have failed or exited prematurely.')
+        msgs.append('Remove the lock file and set force to True with the desired version (default to most recent).')
+        msgs.append('It may be best to completely repopulate path using pull_data and measures_update.')
+        print_log_messages(msgs, logger, True)
+        # reraise this
+        raise
+
+    except BadReadme as exc:
+        # something is wrong in the readme after an update was triggered, this shouldn't happen, print more context and reraise this
+        msgs = [str(exc)]
+        msgs.append('This should not happen unless multiple sessions are trying to update data at the same time and one experienced problems or was done out of sequence')
+        msgs.append('Check for other updates in progress or choose a different path or clear out this path and reinstall the casarundata as well as the measures data')
+        print_log_messages(msgs, logger, True)
+        raise
         
     except Exception as exc:
         msgs = []
         msgs.append("ERROR! : Unexpected exception while updating measures at %s" % path)
         msgs.append("ERROR! : %s" % exc)
         print_log_messages(msgs, logger, True)
-        # leave the contents of the lock file as is to aid in debugging
-        
-    # if the lock file is not closed, do that now to release the lock
-    if lock_fd is not None and not lock_fd.closed:
-        lock_fd.close()
+        raise
+
+    finally:
+        # make sure the lock file is closed and also clean the lock file if safe to do so, this is always executed
+        if lock_fd is not None and not lock_fd.closed:
+            if clean_lock:
+                lock_fd.truncate(0)
+            lock_fd.close()
 
     return

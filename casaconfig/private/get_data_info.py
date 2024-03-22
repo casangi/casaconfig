@@ -70,16 +70,20 @@ def get_data_info(path=None, logger=None, type=None):
     If path has not been set (has a value of None) then the returned value will be None. This
     likely means that a casasiteconfig.py exists but has not yet been edited to set measurespath.
 
-    Parameters
-       - path (str) - Folder path to find the casarundata and measures data information. If not set then config.measurespath is used.
-       - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal.
-       - type (str) - the specific type of data info to return (None, 'casarundata', 'measures', 'release'; None returns a dictionary of all types)
+    Parameters:
+       path (str): Folder path to find the casarundata and measures data information. If not set then config.measurespath is used.
+       logger (casatools.logsink=None): Instance of the casalogger to use for writing messages. Default None writes messages to the terminal.
+       type (str): the specific type of data info to return (None, 'casarundata', 'measures', 'release'; None returns a dictionary of all types)
     
-    Returns
-       dict - a dictionary by type, 'casarundata', 'measures', 'release' where each type is a dictionary containing 'version' and 'date'. A return value of None indicates path is unset. A value of None for that type means no information could be found about that type. If a specific type is requested then only the dictionary for that type is returned (or None if that type can not be found).
+    Returns:
+       dict: a dictionary by type, 'casarundata', 'measures', 'release' where each type is a dictionary containing 'version' and 'date'. A return value of None indicates path is unset. A value of None for that type means no information could be found about that type. If a specific type is requested then only the dictionary for that type is returned (or None if that type can not be found).
+
+    Raises:
+        UnsetMeasurespath: path is None and has not been set in config
+        ValueError: raised when type has an invalid value
+
     """
 
-    # when None is returned, path wasn't set
     result = None
 
     import os
@@ -87,6 +91,9 @@ def get_data_info(path=None, logger=None, type=None):
     import importlib.resources
     from .print_log_messages import print_log_messages
     from .read_readme import read_readme
+    
+    from casaconfig import UnsetMeasurespath
+
 
     currentTime = time.time()
     secondsPerDay = 24. * 60. * 60.
@@ -96,8 +103,7 @@ def get_data_info(path=None, logger=None, type=None):
         path = _config.measurespath
 
     if path is None:
-        print_log_messages('path is None and has not been set in config.measurespath. Provide a valid path and retry.', logger, True)
-        return None
+        raise UnsetMeasurespath('get_data_info: path is None and has not been set in config.measurespath. Provide a valid path and retry.')
     
     path = os.path.abspath(os.path.expanduser(path))
 

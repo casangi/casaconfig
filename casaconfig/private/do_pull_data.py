@@ -23,15 +23,15 @@ def do_pull_data(path, version, installed_files, currentVersion, currentDate, lo
     calling function has already examined any existing readme file and used that
     to set the installed_files list as appropriate. 
 
-    Parameters
-       - path (str) - Folder path to place casadata contents.
-       - version (str) - casadata version to retrieve.
-       - installed_files (str list) - list of installed files from the version already installed. Set to an empty list if there is no previously installed version.
-       - currentVersion (str) - from the readme file if it already exists, or an empty string if there is no previously installed version.
-       - currentDate (str) - from the readme file if it already exists, or an empty string if there is no previously installed version.
-       - logger (casatools.logsink) - Instance of the casalogger to use for writing messages. Messages are always written to the terminal. Set to None to skip writing messages to a logger.
+    Parameters:
+       path (str): Folder path to place casadata contents.
+       version (str): casadata version to retrieve.
+       installed_files (str list): list of installed files from the version already installed. Set to an empty list if there is no previously installed version.
+       currentVersion (str): from the readme file if it already exists, or an empty string if there is no previously installed version.
+       currentDate (str): from the readme file if it already exists, or an empty string if there is no previously installed version.
+       logger (casatools.logsink): Instance of the casalogger to use for writing messages. Messages are always written to the terminal. Set to None to skip writing messages to a logger.
 
-    Returns
+    Returns:
        None
 
     """

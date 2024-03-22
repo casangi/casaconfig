@@ -51,3 +51,6 @@ iplogfile='ipython-%s.log' % _time.strftime("%Y%m%d-%H%M%S", _time.gmtime())
 
 # include the user's local site-packages in the python path if True. May conflict with CASA modules
 user_site = False
+
+# verbosity level for casaconfig
+casaconfig_verbose = 1

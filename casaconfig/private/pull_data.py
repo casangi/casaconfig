@@ -15,10 +15,14 @@
 this module will be included in the api
 """
 
-def pull_data(path=None, version=None, force=False, logger=None):
+def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
     """
     Pull the casarundata contents from the CASA host and install it in path.
 
+    The verbose argument controls the level of information provided when this function when the data
+    are unchanged for expected reasons. A level of 0 prints and logs nothing. A
+    value of 1 logs the information and a value of 2 logs and prints the information.
+  
     The path must either contain a previously installed version of casarundata 
     or it must not exist or be empty.
 
@@ -79,32 +83,41 @@ def pull_data(path=None, version=None, force=False, logger=None):
     what versions are available. There is no check on when the data were last updated before
     calling data_available (as there is in the two update functions). 
 
-    Parameters
-       - path (str) - Folder path to place casarundata contents. It must be empty or not exist or contain a valid, previously installed version. If not set then config.measurespath is used.
-       - version (str=None) - casadata version to retrieve. Default None gets the most recent version.
-       - force (bool=False) - If True, re-download and install the data even when the requested version matches what is already installed. Default False will not download data if the installed version matches the requested version.
-       - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Messages are always written to the terminal. Default None does not write any messages to a logger.
+    Parameters:
+       path (str): Folder path to place casarundata contents. It must be empty or not exist or contain a valid, previously installed version. If not set then config.measurespath is used.
+       version (str=None): casadata version to retrieve. Default None gets the most recent version.
+       force (bool=False): If True, re-download and install the data even when the requested version matches what is already installed. Default False will not download data if the installed version matches the requested version.
+       logger (casatools.logsink=None): Instance of the casalogger to use for writing messages. Messages are always written to the terminal. Default None does not write any messages to a logger.
+       verbose (int): Level of output, 0 is none, 1 is to logger, 2 is to logger and terminal, defaults to casaconfig_verbose in the config dictionary.
 
-    Returns
+    Returns:
        None
+
+    Raises:
+       BadLock: raised when the lock file is not empty when a lock is requested
+       BadReadme: raised when the readme.txt file found at path does not contain the expected list of installed files or there was an unexpected change while the data lock is on
+       NotWritable: raised when the user does not have write permission to path
+       RemoteError : raised by data_available when the list of available data versions could not be fetched
+       UnsetMeasurespath: raised when path is None and and measurespath has not been set in config.
 
     """
 
     import os
 
-    from .data_available import data_available
+    from casaconfig import data_available
+    from casaconfig import get_data_info
+    from casaconfig import UnsetMeasurespath, BadLock, BadReadme, NotWritable
+
     from .print_log_messages import print_log_messages
     from .get_data_lock import get_data_lock
     from .do_pull_data import do_pull_data
-    from .get_data_info import get_data_info
 
     if path is None:
         from .. import config as _config
         path = _config.measurespath
 
     if path is None:
-        print_log_messages('path is None and has not been set in config.measurespath. Provide a valid path and retry.', logger, True)
-        return
+        raise UnsetMeasurespath('path is None and has not been set in config.measurespath. Provide a valid path and retry.')
 
     # when a specific version is requested then the measures readme.txt that is part of that version
     # will get a timestamp of now so that default measures updates won't happen for a day unless the
@@ -149,16 +162,13 @@ def pull_data(path=None, version=None, force=False, logger=None):
 
         if (installed_files is None or len(installed_files) == 0):
             # this shouldn't happen
-            msgs = []
-            msgs.append('destination path is not empty and the readme.txt file found there did not contain the expected list of installed files')
-            msgs.append('choose a different path or empty this path and try again')
-            print_log_messages(msgs, logger, True)
-            # no lock as been set yet, safe to simply return here
-            return
+            # no lock has been set yet, safe to raise this exception without worrying about the lock
+            raise BadReadme('pull_data: the readme.txt file at path did not contain the expected list of installed files')
             
         # the readme file looks as expected, pull if the version is different or force is true
         if version is None:
             # use most recent available
+            # this may raise a RemoteError, no need to catch that here but it may need to be caught upstream
             available_data = data_available()
             version = available_data[-1]
 
@@ -167,11 +177,13 @@ def pull_data(path=None, version=None, force=False, logger=None):
         if not do_pull:
             # it's already at the expected version and force is False, nothing to do
             # safe to return here, no lock has been set
+            print_log_messages('pull_data: version is already at the expected version and force is False. Nothing was changed', logger, verbose=verbose)
             return
         
     # a pull will happen, unless the version string is not available
 
     if available_data is None:
+        # this may raise a RemoteError, no need to catch that here but it may need to be caught upstream
         available_data = data_available()
 
     if version is None:
@@ -196,21 +208,18 @@ def pull_data(path=None, version=None, force=False, logger=None):
         # make dirs all the way down path if possible
         os.makedirs(path)
 
+    # path must be writable with execute bit set
+    if (not os.access(path, os.W_OK | os.X_OK)) :
+        raise NotWritable('pull_data: No permission to write to path, cannot update : %s' % path)
+
     # lock the data_update.lock file
     lock_fd = None
+    clean_lock = True  # set to False if the contents are actively being update and the lock file should not be cleaned on exception
     try:
         print_log_messages('pull_data using version %s, acquiring the lock ... ' % version, logger)
 
         lock_fd = get_data_lock(path, 'pull_data')
-        # if lock_fd is None it means the lock file was not empty - because we know that path exists at this point
-        if lock_fd is None:
-            msgs = []
-            msgs.append('The lock file at %s is not empty.' % path)
-            msgs.append('A previous attempt to update path may have failed or exited prematurely.')
-            msgs.append('Remove the lock file and set force to True with the desired version (default to the most recent).')
-            msgs.append('It may be best to clean out that location and do a fresh pull_data.')
-            print_log_messages(msgs, logger, True)
-            return
+        # the BadLock exception that may happen here is caught below
         
         do_pull = True
         if not force:
@@ -242,48 +251,59 @@ def pull_data(path=None, version=None, force=False, logger=None):
                 # a version of 'invalid', 'error', or 'unknown' is a surprise here, likely caused by something else doing something
                 # incompatible with this attempt
                 if version in ['invalid','error','unknown']:
-                    do_pull = False
-                    msgs = []
-                    msgs.append('Unexpected version or problem found in readme.txt file during pull_data, can not safely pull the requested version')
-                    msgs.append('This should not happen unless multiple sessions are trying to pull_data at the same time and one experienced problems or was done out of sequence')
-                    print_log_messages(msgs, logger, True)
-                    
+                    # raise BadReadme (caught below) and do not clean up the lock file
+                    clean_lock = False
+                    raise BadReadme('data_update : something unexpected has changed in the path location, can not continue')
 
                 if do_pull:
                     # make sure the copy of installed_files is the correct one
                     installed_files = readmeInfo['manifest']
                     if len(installed_files) == 0:
-                        # this shoudn't happen, do not do a pull
-                        do_pull = False
-                        msgs = []
-                        msgs.append('destination path is not empty and the readme.txt file found there did not contain the expected list of installed files')
-                        msgs.append('This should not happen unless multiple sessions are trying to pull_data at the same time and one experienced problems or was done out of sequence')
-                        msgs.append('Check for other updates in process or choose a different path or clear out this path and try again')
-                        print_log_messages(msgs, logger, True)
+                        # this shoudn't happen, raise BadReadme (caught below) and do not clean up the lock file
+                        clean_lock = False
+                        raise BadReadme('pull_data : the readme.txt file at path did not contain the expected list of installed files after the lock was obtained, this should never happen.')
 
         if do_pull:
+            # do not clean the lock file contents at this point unless do_pull_data returns normally
+            clean_lock = False
             do_pull_data(path, version, installed_files, currentVersion, currentDate, logger)
+            clean_lock = True
             if namedVersion:
                 # a specific version has been requested, set the times on the measures readme.txt to now to avoid
                 # a default update of the measures data without using the force argument
                 measuresReadmePath = os.path.join(path,'geodetic/readme.txt')
                 os.utime(measuresReadmePath)
 
-                
-        # truncate the lock filed
-        lock_fd.truncate(0)
-        
+
+    except BadLock as exc:
+        # the path is known to exist so this means that the lock file was not empty and it's not locked
+        msgs = str(exc)
+        msgs.append('The lock file at %s is not empty.' % path)
+        msgs.append('A previous attempt to update path may have failed or exited prematurely.')
+        msgs.append('It may be best to completely repopulated path using pull_data and measures_update.')
+        print_log_messages(msgs, logger, True)
+        # reraise this
+        raise
+    except BadReadme as exc:
+        # something is wrong in the readme after an update was triggered and locked, this shouldn't happen, print more context and reraise this
+        msgs = str(exc)
+        msgs.append('This should not happen unless multiple sessions are trying to update data at the same time and one experienced problems or was done out of sequence')
+        msgs.append('Check for other updates in progress or choose a different path or clear out this path and try again')
+        print_log_messages(msgs, logger, True)
+        raise
+    
     except Exception as exc:
         msgs = []
         msgs.append('ERROR! : Unexpected exception while populating casarundata version %s to %s' % (version, path))
         msgs.append('ERROR! : %s' % exc)
         print_log_messages(msgs, logger, True)
-        # leave the contents of the lock file as is to aid in debugging
-        # import traceback
-        # traceback.print_exc()
+        raise
 
-    # if the lock file is not closed, do that now to release the lock
-    if lock_fd is not None and not lock_fd.closed:
-        lock_fd.close()
+    finally:
+        # make sure the lock file is closed and also clean the lock file if safe to do so, this is always executed
+        if lock_fd is not None and not lock_fd.closed:
+            if clean_lock:
+                lock_fd.truncate(0)
+            lock_fd.close()
         
     return

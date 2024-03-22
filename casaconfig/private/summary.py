@@ -22,11 +22,25 @@ def summary(configDict = None):
     value of the measurespath config value is shown, the installed data versions are shown
     (casarundata and measures) and any release version information is shown.
 
+    Parameters:
+        configDict (dict): a config dictionary. If None this is imported from casaconfig.
+
+    Returns:
+        None
+
     """
 
     import casaconfig
 
-    dataInfo = casaconfig.get_data_info()
+    if configDict is None:
+        from casaconfig import config as configDict
+
+    try:
+        dataInfo = casaconfig.get_data_info()
+    except casaconfig.UnsetMeasurespath:
+        print("Measurespath is unset or does not exist in config dictionary. Use a valid path and try again")
+        return
+    
     print("")
     print("casaconfig summary")
     print("")
@@ -54,6 +68,8 @@ def summary(configDict = None):
         msg = "casarundata version : %s" % rundataVers
         if rundataVers == "unknown":
             msg += "; legacy data not maintained by casaconfig"
+        elif rundataVers == "error":
+            msg += "; unexpected readme.txt file, casarundata should be reinstalled"
         print(msg)
     if (dataInfo['measures'] is None):
         print("measures version : no measures found")
@@ -62,6 +78,8 @@ def summary(configDict = None):
         msg = "measures version : %s" % measVers
         if measVers == "unknown":
             msg += "; legacy data not maintained by casaconfig"
+        elif measVers == "error":
+            msg += "; unexpected readme.txt file, measures should be reinstalled"
         print(msg)
     
     if (dataInfo['release'] is None):

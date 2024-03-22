@@ -16,8 +16,8 @@ def get_data_lock(path, fn_name):
     """
     Get and initialize and set the lock on 'data_update.log' in path.
 
-    If path does not already exist and the lock file is not empty then a lock
-    is not set and the returned value is None.
+    If path does not already exist or the lock file is not empty then a lock
+    is not set then a BadLock exception is raised.
 
     When a lock is set the lock file will contain the user, hostname, pid,
     date, and time.
@@ -29,11 +29,16 @@ def get_data_lock(path, fn_name):
 
     This function is intended for internal casaconfig use.
 
-    Parameters
-       - path (str) - The location where 'data_update.log' is to be found.
-       - fn_name (str) - A string giving the name of the calling function to be recorded in the lock file.
-    Returns
-       - the open file descriptor holding the lock. Close this file descriptor to release the lock. Returns None if path does not exist or the lock file is not empty.
+    Parameters:
+       path (str): The location where 'data_update.log' is to be found.
+       fn_name (str): A string giving the name of the calling function to be recorded in the lock file.
+
+    Returns:
+       fd: the open file descriptor holding the lock. Close this file descriptor to release the lock.
+
+    Raises:
+        BadLock: raised when the path to the lock file does not exist or the lock file is not empty as found
+        Exception: an unexpected exception was seen while writing the lock information to the file
 
     """
 
@@ -42,7 +47,10 @@ def get_data_lock(path, fn_name):
     import getpass
     from datetime import datetime
 
-    if not os.path.exists(path): return None
+    from casaconfig import BadLock
+
+    if not os.path.exists(path):
+        raise BadLock("path to contain lock file does not exist : %s" % path)
 
     lock_path = os.path.join(path, 'data_update.lock')
     lock_exists = os.path.exists(lock_path)
@@ -58,7 +66,7 @@ def get_data_lock(path, fn_name):
         if (len(lockLines) > 0) and (len(lockLines[0]) > 0):
             # not empty
             lock_fd.close()
-            return None
+            raise BadLock("lock file is not empty : %s" % lock_path)
 
     # write the lock information, the seek and truncate are probably not necessary
     try:
@@ -71,7 +79,8 @@ def get_data_lock(path, fn_name):
         print("ERROR! Called by function : %s" % fn_name)
         print("ERROR! : %s" % exc)
         lock_fd.close()
-        return None
+        # reraise the exception - this shouldn't happen
+        raise exc
 
     return lock_fd
    

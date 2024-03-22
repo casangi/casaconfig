@@ -15,7 +15,7 @@
 this module will be included in the api
 """
 
-def do_auto_updates(configDict, logger=None):
+def do_auto_updates(configDict, logger=None, verbose=None):
     """
     Use measurespath, data_auto_update, and measures_auto_update from configDict to
     do any auto updates as necessary.
@@ -33,12 +33,22 @@ def do_auto_updates(configDict, logger=None):
     See the documentation for data_update and measures_update for additional details
     about the auto update rules.
 
-    Paramters
-       - configDict (dict) - A config dictionary previously set. 
-       - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal.
+    The verbose argument controls the level of information provided when this function when the data
+    are unchanged for expected reasons. A level of 0 prints and logs nothing. A
+    value of 1 logs the information and a value of 2 logs and prints the information.
 
-    Returns
+    See data_update and measures_update for additional details about exceptions
+
+    Paramters:
+       configDict (dict): A config dictionary previously set. 
+       logger (casatools.logsink=None): Instance of the casalogger to use for writing messages. Default None writes messages to the terminal.
+       verbose (int): Level of output, 0 is none, 1 is to logger, 2 is to logger and terminal, defaults to casaconfig_verbose in the config dictionary.
+
+    Returns:
        None
+
+    Raises:
+      UnsetMeasurespath: raised when measurespath is None in config
 
     """
 
@@ -46,28 +56,22 @@ def do_auto_updates(configDict, logger=None):
     from .data_update import data_update
     from .measures_update import measures_update
 
+    from casaconfig import UnsetMeasurespath
+
     if configDict.measurespath is None:
         # continue, because things still might work if there are measures in datapath
-        msgs = []
-        msgs.append('measurespath is None in config')
-        msgs.append('set measurespath in your config file at ~/.casa/config.py')
-        msgs.append('or ask the site manager to set that in a casasiteconfig.py')
-        msgs.append('visit https://casadocs.readthedocs.io/en/stable/notebooks/external-data.html for more information')
+        raise UnsetMeasurespath('do_auto_updates: measurespath is None in configDict. Provide a valid path and retry.')
 
-        if (configDict.measures_auto_update or configDict.data_auto_update):
-            msgs.append('Auto updates of measures path are not possible because measurespath is not set, skipping auto updates')
-
-        print_log_messages(msgs, logger, True)
-
-        return
+    if verbose is None:
+        verbose = configDict.casaconfig_verbose
 
     if (configDict.measures_auto_update or configDict.data_auto_update):
         if (configDict.data_auto_update and (not configDict.measures_auto_update)):
             print_log_messages('measures_auto_update must be True when data_auto_update is True, skipping auto updates', logger, True)
         else:
             if configDict.data_auto_update:
-                data_update(configDict.measurespath, logger=logger, auto_update_rules=True)
+                data_update(configDict.measurespath, logger=logger, auto_update_rules=True, verbose=verbose)
             if configDict.data_auto_update or configDict.measures_auto_update:
-                measures_update(configDict.measurespath, logger=logger, auto_update_rules=True)
+                measures_update(configDict.measurespath, logger=logger, auto_update_rules=True, verbose=verbose)
 
     return

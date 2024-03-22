@@ -44,68 +44,96 @@ else:
     config.measurespath = flags.measurespath
 
 # watch for measurespath of None, that likely means that casasiteconfig.py is in use and this has not been set. It can't be used then.
-if flags.measurespath is None:
-    print("measurespath has been set to None, likely in casasiteconfig.py.")
-    print("Either provide a measurespath on the casaconfig command line or edit casasiteconfig.py or other a user config.py to set measurespath to a location.")
+try:
+    if flags.measurespath is None:
+        print("measurespath has been set to None in the user or site config file.")
+        print("Either provide a measurespath on the casaconfig command line or edit the user or site config file to set measurespath to a location.")
+        sys.exit(1)
+
+    # do any expanduser and abspath - this is what should be used
+    measurespath = os.path.abspath(os.path.expanduser(flags.measurespath))
+
+    if flags.currentdata:
+        if not os.path.exists(measurespath) or not os.path.isdir(measurespath):
+            print("No data installed at %s. The measurespath does not exist or is not a directory." % measurespath)
+        else:
+            print("current data installed at %s" % measurespath)
+            dataInfo = casaconfig.get_data_info(measurespath)
+        
+            # casarundata
+            casarunInfo = dataInfo['casarundata']
+            if casarunInfo is None or casarunInfo['version'] == "invalid":
+                print("No casarundata found (missing readme.txt and not obviously legacy casa data).")
+            if casarunInfo['version'] == "error":
+                print("Unexpected casarundata readme.txt content; casarundata should be reinstalled.")
+            elif casarunInfo['version'] == "unknown":
+                print("casarundata version is unknown (probably legacy casa data not maintained by casaconfig).")
+            else:
+                currentVersion = casarunInfo['version']
+                currentDate = casarunInfo['date']
+                print('casarundata version %s installed on %s' % (currentVersion, currentDate))
+            
+            # measures
+            measuresInfo = dataInfo['measures']
+            if measuresInfo is None or measuresInfo['version'] == "invalid":
+                print("No measures data found (missing readme.txt and not obviously legacy measures data).")
+            if measuresInfo['version'] == "error":
+                print("Unexpected measures readme.txt content; measures should be reinstalled.")
+            elif measuresInfo['version'] == "unknown":
+                print("measures version is unknown (probably legacy measures data not maintained by casaconfig).")
+            else:
+                currentVersion = measuresInfo['version']
+                currentDate = measuresInfo['date']
+                print('measures version %s installed on %s' % (currentVersion, currentDate))
+ 
+        # ignore any other arguments
+    elif flags.summary:
+        from casaconfig.private.summary import summary
+        summary(config)
+        # ignore any other arguments
+    else:
+        if flags.referencetesting:
+            print("reference testing using pull_data and 'release' version into %s" % measurespath)
+            casaconfig.pull_data(measurespath,'release')
+            # ignore all other options
+        else:
+            # the update options, update all does everything, no need to invoke anything else
+            print("Checking for updates into %s" % measurespath)
+            if flags.updateall:
+                casaconfig.update_all(measurespath,force=flags.force)
+            else:
+                # do any pull_update first
+                if flags.pulldata:
+                    casaconfig.pull_data(measurespath)
+                # then data_update, not necessary if pull_data just happened
+                if flags.dataupdate and not flags.pulldata:
+                    casaconfig.data_update(measurespath, force=flags.force)
+                # then measures_update
+                if flags.measuresupdate:
+                    casaconfig.measures_update(measurespath, force=flags.force)
+
+except casaconfig.UnsetMeasurespath as exc:
+    # UnsetMeasurespath should not happen because measurespath is checked to not be None above, but just in case
+    print(str(exc))
+    print("This exception should not happen, check the previous messages for additional information and try a different path")
     sys.exit(1)
 
-# do any expanduser and abspath - this is what should be used
-measurespath = os.path.abspath(os.path.expanduser(flags.measurespath))
+except casaconfig.BadReadme as exc:
+    print(str(exc))
+    sys.exit(1)
 
-if flags.currentdata:
-    if not os.path.exists(measurespath) or not os.path.isdir(measurespath):
-        print("No data installed at %s. The measurespath does not exist or is not a directory." % measurespath)
-    else:
-        from casaconfig import get_data_info
-        print("current data installed at %s" % measurespath)
-        dataInfo = get_data_info(measurespath)
-        
-        # casarundata
-        casarunInfo = dataInfo['casarundata']
-        if casarunInfo is None or casarunInfo['version'] == "invalid":
-            print("No casarundata found (missing or unexpected readme.txt contents, not obviously legacy casa data).")
-        elif casarunInfo['version'] == "unknown":
-            print("casarundata version is unknown (probably legacy casa data not maintained by casaconfig).")
-        else:
-            currentVersion = casarunInfo['version']
-            currentDate = casarunInfo['date']
-            print('casarundata version %s installed on %s' % (currentVersion, currentDate))
-            
-        # measures
-        measuresInfo = dataInfo['measures']
-        if measuresInfo is None or measuresInfo['version'] == "invalid":
-            print("No measures data found (missing or unexpected readme.txt, not obviously legacy measures data).")
-        elif measuresInfo['version'] == "unknown":
-            print("measures version is unknown (probably legacy measures data not maintained by casaconfig).")
-        else:
-            currentVersion = measuresInfo['version']
-            currentDate = measuresInfo['date']
-            print('measures version %s installed on %s' % (currentVersion, currentDate))
- 
-    # ignore any other arguments
-elif flags.summary:
-    from casaconfig.private.summary import summary
-    summary(config)
-    # ignore any other arguments
-else:
-    if flags.referencetesting:
-        print("reference testing using pull_data and 'release' version into %s" % measurespath)
-        casaconfig.pull_data(measurespath,'release')
-        # ignore all other options
-    else:
-        # the update options, update all does everything, no need to invoke anything else
-        print("Checking for updates into %s" % measurespath)
-        if flags.updateall:
-            casaconfig.update_all(measurespath,force=flags.force)
-        else:
-            # do any pull_update first
-            if flags.pulldata:
-                casaconfig.pull_data(measurespath)
-            # then data_update, not necessary if pull_data just happened
-            if flags.dataupdate and not flags.pulldata:
-                casaconfig.data_update(measurespath, force=flags.force)
-            # then measures_update
-            if flags.measuresupdate:
-                casaconfig.measures_update(measurespath, force=flags.force)
+except casaconfig.RemoteError as exc:
+    print(str(exc))
+    print("This is likely due to no network connection or bad connectivity to a remote site, wait and try again")
+    sys.exit(1)
+
+except casaconfig.BadLock as exc:
+    # the output produced by the update functions is sufficient, just re-echo the exception text itself
+    print(str(exc))
+    sys.exit(1)
+
+except casaconfig.NotWritable as exc:
+    print(str(exc))
+    sys.exit(1)
 
 sys.exit(0)

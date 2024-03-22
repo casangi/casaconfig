@@ -15,7 +15,7 @@
 this module will be included in the api
 """
 
-def update_all(path=None, logger=None, force=False):
+def update_all(path=None, logger=None, force=False, verbose=None):
     """
     Update the data contants at path to the most recently released versions
     of casarundata and measures data. 
@@ -35,18 +35,24 @@ def update_all(path=None, logger=None, force=False):
 
     The force argument is passed to data_update and measures_update
 
+    The verbose argument controls the level of information provided when 
+    this function when the data are unchanged for expected reasons. A level 
+    of 0 prints and logs nothing. A value of 1 logs the information and a value 
+    of 2 logs and prints the information.
+
     This uses pull_data, data_update and measures_update. See the
-    documentation for those functions for additional details.
+    documentation for those functions for additional details (e.g. verbose argument).
 
     Some of the data updated by this function is only read when casatools starts.
     Use of update_all after CASA has started should typically be followed by a restart 
     so that any changes are seen by the tools and tasks that use this data.
 
-    Parameters
-       - path (str=None) - Folder path to place casarundata contents. It must not exist, or be empty, or contain a valid, previously installed version. If it exists, it must be owned by the user. Default None uses the value of measurespath set by importing config.py.
-       - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Messages are always written to the terminal. Default None does not write any messages to a logger.
+    Parameters:
+       path (str=None): Folder path to place casarundata contents. It must not exist, or be empty, or contain a valid, previously installed version. If it exists, it must be owned by the user. Default None uses the value of measurespath set by importing config.py.
+       logger (casatools.logsink=None): Instance of the casalogger to use for writing messages. Messages are always written to the terminal. Default None does not write any messages to a logger.
+       verbose (int): Level of output, 0 is none, 1 is to logger, 2 is to logger and terminal, defaults to casaconfig_verbose in the config dictionary.
 
-    Returns
+    Returns:
        None
 
     """
@@ -86,7 +92,7 @@ def update_all(path=None, logger=None, force=False):
 
     # if path is empty, first use pull_data
     if len(os.listdir(path))==0:
-        pull_data(path, logger)
+        pull_data(path, logger, verbose=verbose)
         # double check that it's not empty
         if len(os.listdir(path))==0:
             print_log_messages("pull_data failed, see the error messages for more details. update_all can not continue")
@@ -102,16 +108,16 @@ def update_all(path=None, logger=None, force=False):
         print_log_messages('readme.txt not found at path, update_all can not continue, path = %s' % path, logger)
         return
 
-    if dataInfo['casarundata'] is 'invalid':
+    if dataInfo['casarundata'] == 'invalid':
         print_log_messages('readme.txt is invalid at path, update_all can not continue, path = %s' % path, logger)
         return
 
-    if dataInfo['casarundata'] is 'unknown':
+    if dataInfo['casarundata'] == 'unknown':
         print_log_messages('contents at path appear to be casarundata but no readme.txt was found, casaconfig did not populate this data and update_all can not continue, path = %s', path, logger)
         return
 
     # the updates should work now
-    data_update(path, logger, force=force)
-    measures_update(path, logger, force=force)
+    data_update(path, logger, force=force, verbose=verbose)
+    measures_update(path, logger, force=force, verbose=verbose)
 
     return

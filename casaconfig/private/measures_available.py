@@ -25,20 +25,35 @@ def measures_available():
     of the values in that list if set (otherwise the most recent version
     in this list is used).
 
-    Parameters
+    Parameters:
        None
     
-    Returns
-       list - version names returned as list of strings
+    Returns:
+       list: version names returned as list of strings
+
+    Raises:
+       RemoteError: raised when when a socket.gaierror is seen, likely due to no network connection
+       Exception: raised when any unexpected exception happens
 
     """
     from ftplib import FTP
-    
-    ftp = FTP('ftp.astron.nl')
-    rc = ftp.login()
-    rc = ftp.cwd('outgoing/Measures')
-    files = ftp.nlst()
-    ftp.quit()
-    #files = [ff.replace('WSRT_Measures','').replace('.ztar','').replace('_','') for ff in files]
-    files = [ff for ff in files if (len(ff) > 0) and (not ff.endswith('.dat'))]
+    import socket
+
+    from casaconfig import RemoteError
+
+    files = []
+    try:
+        ftp = FTP('ftp.astron.nl')
+        rc = ftp.login()
+        rc = ftp.cwd('outgoing/Measures')
+        files = ftp.nlst()
+        ftp.quit()
+        #files = [ff.replace('WSRT_Measures','').replace('.ztar','').replace('_','') for ff in files]
+        files = [ff for ff in files if (len(ff) > 0) and (not ff.endswith('.dat'))]
+    except socket.gaierror as gaierr:
+        raise RemoteError("Unable to retrieve list of available measures versions : " + str(gaierr)) from None
+    except Exception as exc:
+        msg = "Unexpected exception while getting list of available measures versions : " + str(exc)
+        raise Exception(msg)
+        
     return files

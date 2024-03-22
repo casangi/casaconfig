@@ -29,18 +29,25 @@ def data_available():
     changing casaconfig functions that use those tarballs). The full filename is
     the casarundata version expected in casaconfig functions.
 
-    Parameters
+    Parameters:
        None
     
-    Returns
-       list - version names returned as list of strings
+    Returns:
+       list: version names returned as list of strings
+
+    Raises:
+       casaconfig.RemoteError: Raised when there is an error fetching some remote content
+       Exception: Unexpected exception while getting list of available casarundata versions
 
     """
 
     import html.parser
     import urllib.request
+    import urllib.error
     import ssl
     import certifi
+
+    from casaconfig import RemoteError
     
     class LinkParser(html.parser.HTMLParser):
         def reset(self):
@@ -67,10 +74,13 @@ def data_available():
 
         # return the sorted list, earliest versions are first, newest is last
         return sorted(parser.rundataList)
-    
+
+    except urllib.error.URLError as urlerr:
+        raise RemoteError("Unable to retrieve list of available casarundata versions : " + str(urlerr)) from None
+        
     except Exception as exc:
-        print("ERROR! : unexpected exception while getting list of available casarundata versions")
-        print("ERROR! : %s" % exc)
+        msg = "Unexpected exception while getting list of available casarundata versions : " + str(exc)
+        raise Exception(msg)
 
     # nothing to return if it got here, must have been an exception
     return []

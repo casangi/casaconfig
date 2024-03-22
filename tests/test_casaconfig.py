@@ -107,16 +107,12 @@ class casaconfig_test(unittest.TestCase):
         '''Test Default config.py exists in casaconfig module'''
         self.assertTrue(os.path.isfile('{}/casaconfig/config.py'.format(sitepackages)))
 
+    @unittest.skipIf(not os.path.exists(os.path.join(sitepackages,'casatools')), "casatools not found")
     def test_import_casatools_bad_measurespath(self):
         '''Test that import casatools will return ImportError with measurespath set to an empty directory that cannot be written to'''
         # Due to casatools / casaconfig caching, run the import of casatools and read stdout/stderr for ImportError
         # after first creating an empty measurespath directory with the write permissions turned off
         # and then creating a test config file using the path to that directory as measurespath
-
-        # skip this test if casatools is not available (testing casaconfig apart from the rest of casa)
-        if not os.path.exists(os.path.join(sitepackages,'casatools')):
-            print("casatools is not available in sitepackages. skipping test_import_casatools_bad_measurespath")
-            return
 
         if (not os.path.exists(self.emptyPath)):
             os.mkdir(self.emptyPath)
@@ -137,8 +133,10 @@ class casaconfig_test(unittest.TestCase):
         (output, _) = proc.communicate()
 
         p_status = proc.wait()
-        ref = True if "ImportError" in str(output) else False
-        self.assertTrue(ref, "ImportError Not Found")
+        print("test_import_casatools_bad_measurespath")
+        print(str(output))
+        ref = True if "NotWritable" in str(output) else False
+        self.assertTrue(ref, "NotWritable Not Found")
 
     def test_casaconfig_measures_available(self):
         '''Test That Today or Yesterday measures data is returned'''
@@ -171,13 +169,9 @@ class casaconfig_test(unittest.TestCase):
 
         self.assertTrue(newVers == vers)
 
+    @unittest.skipIf(not os.path.exists(os.path.join(sitepackages,'casatools')), "casatools not found")
     def test_read_measurespath_from_user_config(self):
         '''Test casaconfig downloads specific measures data to location and casatools reads that data location'''
-
-        # skip this test if casatools is not available (testing casaconfig apart from the rest of casa)
-        if not os.path.exists(os.path.join(sitepackages,'casatools')):
-            print("casatools is not available in sitepackages. skipping test_read_measurespath_from_user_config")
-            return
 
         # this requires that there be the full casarundata already installed
         self.populate_testrundata()
@@ -212,19 +206,17 @@ class casaconfig_test(unittest.TestCase):
         p_status = proc.wait()
 
         ref = False if "AssertionError" in str(output) else True
+        print("test_read_measurespath_from_user_config")
+        print(str(output))
         self.assertTrue(ref, "AssertionError seen in output : expected utils().measurespath() was not seen")
 
         # final check that the expected version is now installed
         installedVers = casaconfig.get_data_info(path=self.testRundataPath,type='measures')['version']
         self.assertTrue(installedVers == vers, "expected version was not installed : %s != %s" % (installedVers, vers))
         
+    @unittest.skipIf(not os.path.exists(os.path.join(sitepackages,'casatools')), "casatools not found")
     def test_auto_update_measures(self):
         '''Test Automatic Measures Updates to measurespath'''
-
-        # skip this test if casatools is not available (testing casaconfig apart from the rest of casa)
-        if not os.path.exists(os.path.join(sitepackages,'casatools')):
-            print("casatools is not available in sitepackages. skipping test_auto_update_measures")
-            return
 
         # this requires that there be the full casarundata already installed
         self.populate_testrundata()
@@ -259,15 +251,13 @@ class casaconfig_test(unittest.TestCase):
 
         # output should contain the latest version string
         ref = self.get_meas_avail()[-1] in str(output)
+        print("test_auto_update_measures")
+        print(str(output))
         self.assertTrue(ref, "Update Failed")
 
+    @unittest.skipIf(not os.path.exists(os.path.join(sitepackages,'casatools')), "casatools not found")
     def test_auto_install_data(self):
         '''Test auto install of all data to measurespath on casatools startup'''
-
-        # skip this test if casatools is not available (testing casaconfig apart from the rest of casa)
-        if not os.path.exists(os.path.join(sitepackages,'casatools')):
-            print("casatools is not available in sitepackages. skipping test_auto_update_measures")
-            return
 
         # make sure that testrundata does not exist
         if os.path.exists(self.testRundataPath):
@@ -286,8 +276,10 @@ class casaconfig_test(unittest.TestCase):
         (output, _) = proc.communicate()
 
         p_status = proc.wait()
-        ref = True if "ImportError" in str(output) else False
-        self.assertTrue(ref, "ImportError Not Found")
+        ref = True if "AutoUpdatesNotAllowed" in str(output) else False
+        print("test_auto_install_data, 1")
+        print(str(output))
+        self.assertTrue(ref, "AutoUpdatesNotAllowed not found")
 
         # create testRundataPath and try again
         os.mkdir(self.testRundataPath)
@@ -295,6 +287,8 @@ class casaconfig_test(unittest.TestCase):
         (output, _) = proc.communicate()
 
         p_status = proc.wait()
+        print("test_auto_install_data, 2")
+        print(str(output))
         ref = True if "ImportError" not in str(output) else False
         self.assertTrue(ref, "ImportError Found")
 
@@ -303,6 +297,8 @@ class casaconfig_test(unittest.TestCase):
         expectedDataVersion = casaconfig.data_available()[-1]
         expectedMeasVersion = self.get_meas_avail()[-1]
         ref = (dataInfo['casarundata']['version'] == expectedDataVersion) and (dataInfo['measures']['version'] == expectedMeasVersion)
+        print("test_auto_install_data, 3")
+        print(str(output))
         self.assertTrue(ref, "Expected versions not installed")
 
     def test_daily_update(self):
@@ -355,9 +351,6 @@ class casaconfig_test(unittest.TestCase):
 
         self.assertTrue((checkRundataVers == rundataVers) and (checkMeasVers != measVers), "versions are not as expected after a measures update")
 
-        # remember this measures version
-        measVers = checkMeasVers
-
         # backdate the rundata
         rundataReadmePath = os.path.join(self.testRundataPath,'readme.txt')
         os.utime(rundataReadmePath,(olderTime,olderTime))
@@ -372,7 +365,11 @@ class casaconfig_test(unittest.TestCase):
         dataInfo = casaconfig.get_data_info(self.testRundataPath)
         checkRundataVers = dataInfo['casarundata']['version']
         checkMeasVers = dataInfo['measures']['version']
-        self.assertTrue((checkRundataVers != rundataVers) and (checkMeasVers == measVers), "versions are not as expected after a measures update")
+
+        # IF a new measures tarball was made available while this test was running then the updated measure here may be one more than the previous
+        # update, so long as this is the most recent measures this test is OK
+        expectedMeasVers = casaconfig.measures_available()[-1]
+        self.assertTrue((checkRundataVers != rundataVers) and (checkMeasVers == expectedMeasVers), "versions are not as expected after a measures update")
 
     def do_config_check(self, expectedDict, noconfig, nositeconfig):
         '''Launch a separate python to load the config files, using --noconfig --nositeconfig as requested, the expectedDict contains expected values'''
