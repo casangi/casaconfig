@@ -44,6 +44,11 @@ class casaconfig_test(unittest.TestCase):
             shutil.rmtree(self.testMeasPath)
 
         if os.path.exists(self.testRundataPath):
+            # make sure this has write permissions, they can get lost if a test fails badly
+            pstat = os.stat(self.testRundataPath).st_mode
+            yes_write = stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH
+            pstat = pstat | yes_write
+            os.chmod(self.testRundataPath,pstat)
             shutil.rmtree(self.testRundataPath)
 
         if os.path.exists(self.emptyPath):
@@ -94,6 +99,19 @@ class casaconfig_test(unittest.TestCase):
             # it seems to be a valid casarundata installation, leave as is
             return
 
+        # make sure it has write permissions, they can get lost if a test fails badly
+        if os.path.exists(self.testRundataPath):
+            pstat = os.stat(self.testRundataPath).st_mode
+            yes_write = stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH
+            pstat = pstat | yes_write
+            os.chmod(self.testRundataPath,pstat)
+            
+        # watch for failed test attempts that tweak the readme files : restore the original readme files if they are found
+        if os.path.exists(os.path.join(self.testRundataPath,'readme.txt.orig')):
+            os.replace(os.path.join(self.testRundataPath,'readme.txt.orig'), os.path.join(self.testRundataPath,'readme.txt'))
+        if os.path.exists(os.path.join(self.testRundataPath,'geodetic/readme.txt.orig')):
+            os.replace(os.path.join(self.testRundataPath,'geodetic/readme.txt.orig'), os.path.join(self.testRundataPath,'geodetic/readme.txt.orig'))
+
         # install the most recent available
         # this query is cheap, don't cache it
         rundataVers = casaconfig.data_available()[-1]
@@ -133,8 +151,6 @@ class casaconfig_test(unittest.TestCase):
         (output, _) = proc.communicate()
 
         p_status = proc.wait()
-        print("test_import_casatools_bad_measurespath")
-        print(str(output))
         ref = True if "NotWritable" in str(output) else False
         self.assertTrue(ref, "NotWritable Not Found")
 
@@ -206,8 +222,6 @@ class casaconfig_test(unittest.TestCase):
         p_status = proc.wait()
 
         ref = False if "AssertionError" in str(output) else True
-        print("test_read_measurespath_from_user_config")
-        print(str(output))
         self.assertTrue(ref, "AssertionError seen in output : expected utils().measurespath() was not seen")
 
         # final check that the expected version is now installed
@@ -251,8 +265,6 @@ class casaconfig_test(unittest.TestCase):
 
         # output should contain the latest version string
         ref = self.get_meas_avail()[-1] in str(output)
-        print("test_auto_update_measures")
-        print(str(output))
         self.assertTrue(ref, "Update Failed")
 
     @unittest.skipIf(not os.path.exists(os.path.join(sitepackages,'casatools')), "casatools not found")
@@ -277,8 +289,6 @@ class casaconfig_test(unittest.TestCase):
 
         p_status = proc.wait()
         ref = True if "AutoUpdatesNotAllowed" in str(output) else False
-        print("test_auto_install_data, 1")
-        print(str(output))
         self.assertTrue(ref, "AutoUpdatesNotAllowed not found")
 
         # create testRundataPath and try again
@@ -287,8 +297,6 @@ class casaconfig_test(unittest.TestCase):
         (output, _) = proc.communicate()
 
         p_status = proc.wait()
-        print("test_auto_install_data, 2")
-        print(str(output))
         ref = True if "ImportError" not in str(output) else False
         self.assertTrue(ref, "ImportError Found")
 
@@ -297,8 +305,6 @@ class casaconfig_test(unittest.TestCase):
         expectedDataVersion = casaconfig.data_available()[-1]
         expectedMeasVersion = self.get_meas_avail()[-1]
         ref = (dataInfo['casarundata']['version'] == expectedDataVersion) and (dataInfo['measures']['version'] == expectedMeasVersion)
-        print("test_auto_install_data, 3")
-        print(str(output))
         self.assertTrue(ref, "Expected versions not installed")
 
     def test_daily_update(self):
@@ -496,7 +502,331 @@ class casaconfig_test(unittest.TestCase):
         msgs = self.do_config_check(expectedDict, noconfig=False, nositeconfig=False)
         self.assertTrue(len(msgs)==0, "failed : config import with CASASITECONFIG unset : " + msgs)
 
+    def test_exceptions_no_data(self):
+        '''test that exceptions that do not require any data happen when expected'''
+        from casaconfig.private.get_data_lock import get_data_lock
+
+        # the tests expect this to not exist, it would be insane if it does, but check anyway
+        self.assertFalse(os.path.exists('/this/does/not/exist/'),"/this/does/not/exist/ shouldn't exist, but apparently it does")
+
+        # AutoUpdatesNotAllowed : path does not exist or is not owned by the user
+        exceptionSeen = False
+        try:
+            # path does not exist - measures_update
+            casaconfig.measures_update(path='/this/does/not/exist/',auto_update_rules=True)
+        except casaconfig.AutoUpdatesNotAllowed:
+            exceptionSeen = True
+        except Exception as exc:
+            print("unexpected exception seen when testing for AutoUpdatesNotAllowed in measures_update using path that should not exist")
+            print(str(exc))
+
+        self.assertTrue(exceptionSeen,"AutoUpdatesNotAllowed not seen as expected in testing measures_update using path that should not exist")
+
+        exceptionSeen = False
+        try:
+            # path does not exist - data_update
+            casaconfig.data_update(path='/this/does/not/exist/',auto_update_rules=True)
+        except casaconfig.AutoUpdatesNotAllowed:
+            exceptionSeen = True
+        except Exception as exc:
+            print("unexpected exception seen when testing for AutoUpdatesNotAllowed in data_update using path that should not exist")
+            print(str(exc))
+        self.assertTrue(exceptionSeen,"AutoUpdatesNotAllowed not seen as expected in testing data_update using path that should not exist")
             
+        # path is not owned by the user, /tmp should be useful in most case, but just in case, skip this if that's not a different user
+        if (os.stat('/tmp').st_uid == os.getuid()):
+            print("skipping AutoUpdatesNotAllowed test for path not owned by the user, /tmp is owned by this user")
+        else:
+            exceptionSeen = False
+            try:
+                casaconfig.measures_update(path='/tmp', auto_update_rules=True)
+            except casaconfig.AutoUpdatesNotAllowed:
+                exceptionSeen = True
+            except Exception as exc:
+                print("unexpected exception seen when testing for AutoUpdatesNotAllowed in measures_update using path not owned by user")
+                print(str(exc))
+            self.assertTrue(exceptionSeen,"AutoUpdatesNotAllowed not seen as expected in testing measures_update using path not owned by user")
+                    
+            exceptionSeen = False
+            try:
+                casaconfig.data_update(path='/tmp', auto_update_rules=True)
+            except casaconfig.AutoUpdatesNotAllowed:
+                exceptionSeen = True
+            except Exception as exc:
+                print("unexpected exception seen when testing for AutoUpdatesNotAllowed in data_update using path not owned by user")
+                print(str(exc))
+            self.assertTrue(exceptionSeen,"AutoUpdatesNotAllowed not seen as expected in testing data_update using path not owned by user")
+
+        # BadLock
+        # path to lock file does not exist
+        exceptionSeen = False
+        try:
+            fd = get_data_lock('/this/does/not/exist', 'test_exceptions')
+            if fd is not None and not fd.close:
+                # this shouldn't happen, but release the lock if it does
+                fd.close()
+        except casaconfig.BadLock as exc:
+            exceptionSeen = True
+        except Exception as exc:
+            print("unexpected exception seen when testing for BadLock when path does not exist")
+            print(str(exc))
+        self.assertTrue(exceptionSeen,"BadLock not seen as expected in testing path does not exist")
+
+        # lock file is not empty
+        exceptionSeen = False
+        fd = None
+        try:
+            # create a non-empty lock file in the current directory
+            cwd = os.getcwd()
+            f = open(os.path.join(cwd,'data_update.lock'),'w')
+            f.write("This file is not empty\n")
+            f.close()
+            fd = get_data_lock(cwd, 'test_exceptions')
+            if fd is not None and not fd.close:
+                # shouldn't happen, but release the lock if it does
+                fd.close()
+        except casaconfig.BadLock as exc:
+            exceptionSeen = True
+        except Exception as exc:
+            print("unexpected exception seen when testing for BadLock and lock file is not empty")
+            print(str(exc))
+        self.assertTrue(exceptionSeen,"BadLock not seen as expected when lock file is not empty")
+        # clean up
+        os.remove(os.path.join(cwd,'data_update.lock'))
+
+        # NoReadme
+
+        # This should work on any non-open path that isn't a measurespath. I think the cwd will
+        # work just fine for that purposes.
+
+        # data_update NoReadme
+        try:
+            exceptionSeen = False
+            # this check happens before the age is determined, so no need to backdate the readme.txt file here
+            casaconfig.data_update(os.getcwd())
+        except casaconfig.NoReadme as exc:
+            exceptionSeen = True
+        except Exception as exc:
+            print("unexpected exception seen when testing for NoReadme in data_update")
+            print(str(exc))
+        self.assertTrue(exceptionSeen, "NoReadme not seen from data_update")
+
+        # measures_update NoReadme
+        try:
+            exceptionSeen = False
+            # this check happens before the age is determined, so no need to backdate the readme.txt file here
+            casaconfig.measures_update(os.getcwd())
+        except casaconfig.NoReadme as exc:
+            exceptionSeen = True
+        except Exception as exc:
+            print("unexpected exception seen when testing for NoReadme in measures_update")
+            print(str(exc))
+        self.assertTrue(exceptionSeen, "NoReadme not seen from measures_update")
+
+        # NotWritable  : path is not writable by the user
+        # use the emptyPath
+        if (not os.path.exists(self.emptyPath)):
+            os.mkdir(self.emptyPath)
+        # the current permissions
+        pstat = stat.S_IMODE(os.stat(self.emptyPath).st_mode)
+        # a bitmask that's the opposite of all of the write permission bits
+        no_write = ~stat.S_IWUSR & ~stat.S_IWGRP & ~stat.S_IWOTH
+        # remove the write permissions
+        pstat = pstat & no_write
+        os.chmod(self.emptyPath,pstat)
+
+        # pull_data NotWritable
+        try:
+            exceptionSeen = False
+            casaconfig.pull_data(self.emptyPath)
+        except casaconfig.NotWritable as exc:
+            exceptionSeen = True
+        except Exception as exc:
+            print("unexpected exception seen when testing for NotWritable in pull_data")
+            print(str(exc))
+        self.assertTrue(exceptionSeen, "NotWritable not seen from pull_data")
+
+        # UnsetMeasurespath : measurespath is None 
+
+        # test script, set measurespath to None after config import, it will be used by the measures_update call
+
+        test_string_all = ''
+        test_string_all += "from casaconfig import config; "
+        test_string_all += "config.measurespath = None; "
+        test_string_all += "import casaconfig; "
+
+        # measures_update
+
+        test_string = test_string_all
+        test_string += "casaconfig.measures_update(); "
+        proc = subprocess.Popen('{} -c "{}"'.format(sys.executable,test_string), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        (output, _) = proc.communicate()
+
+        p_status = proc.wait()
+
+        ref = True if "UnsetMeasurespath" in str(output) else False
+        self.assertTrue(ref, "UnsetMeasurespath not seen in output for measures_update and measurespath=None")
+        
+        # pull_data
+
+        test_string = test_string_all
+        test_string += "casaconfig.pull_data(); "
+        proc = subprocess.Popen('{} -c "{}"'.format(sys.executable,test_string), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        (output, _) = proc.communicate()
+
+        p_status = proc.wait()
+
+        ref = True if "UnsetMeasurespath" in str(output) else False
+        self.assertTrue(ref, "UnsetMeasurespath not seen in output for pull_data and measurespath=None")
+
+        # data_update
+
+        test_string = test_string_all
+        test_string += "casaconfig.data_update(); "
+        proc = subprocess.Popen('{} -c "{}"'.format(sys.executable,test_string), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        (output, _) = proc.communicate()
+
+        p_status = proc.wait()
+
+        ref = True if "UnsetMeasurespath" in str(output) else False
+        self.assertTrue(ref, "UnsetMeasurespath not seen in output for data_update and measurespath=None")
+
+        # get_data_info
+
+        test_string = test_string_all
+        test_string += "di=casaconfig.get_data_info(); "
+        proc = subprocess.Popen('{} -c "{}"'.format(sys.executable,test_string), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        (output, _) = proc.communicate()
+
+        p_status = proc.wait()
+
+        ref = True if "UnsetMeasurespath" in str(output) else False
+        self.assertTrue(ref, "UnsetMeasurespath not seen in output for get_data_info and measurespath=None")
+
+        # do_auto_updates
+
+        test_string = test_string_all
+        test_string += "casaconfig.do_auto_updates(config); "
+        proc = subprocess.Popen('{} -c "{}"'.format(sys.executable,test_string), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        (output, _) = proc.communicate()
+
+        p_status = proc.wait()
+
+        ref = True if "UnsetMeasurespath" in str(output) else False
+        self.assertTrue(ref, "UnsetMeasurespath not seen in output for do_auto_updates and measurespath=None")
+
+
+    def test_exceptions_with_data(self):
+        '''test that exceptions that require data happen when expected'''
+       
+        # these tests requires an already installed set of data
+        self.populate_testrundata()
+
+        # BadReadme
+
+        # create a bad data readme.txt file from the valid one
+        dataReadmePath = os.path.join(self.testRundataPath,'readme.txt')
+        # read in the valid contents
+        with open(dataReadmePath, 'r') as fid:
+            readmeLines = fid.readlines()
+        # rename it to preserve it
+        os.replace(dataReadmePath, os.path.join(self.testRundataPath,'readme.txt.orig'))
+        
+        # create a readme that does not include the manifest, use just the first 3 lines
+        with open(dataReadmePath, 'w') as fid:
+            fid.writelines(readmeLines[:3])
+
+        # data_update badreadme test
+        try:
+            exceptionSeen = False
+            # this check happens before the age is determined, so no need to backdate the readme.txt file here
+            casaconfig.data_update(self.testRundataPath)
+        except casaconfig.BadReadme as exc:
+            exceptionSeen = True
+        except Exception as exc:
+            print("unexpected exception seen when testing for BadRadme in data_update")
+            print(str(exc))
+        self.assertTrue(exceptionSeen, "BadReadme not seen from data_update")
+
+        # pull_data badreadme test
+        try:
+            exceptionSeen = False
+            # this check happens before the age is determined, so no need to backdate the readme.txt file here
+            casaconfig.pull_data(self.testRundataPath)
+        except casaconfig.BadReadme as exc:
+            exceptionSeen = True
+        except Exception as exc:
+            print("unexpected exception seen when testing for BadRadme in pull_data")
+            print(str(exc))
+        self.assertTrue(exceptionSeen, "BadReadme not seen from pull_data")
+
+        # restore original data readme.txt
+        os.replace(os.path.join(self.testRundataPath,'readme.txt.orig'), dataReadmePath)
+
+        # do something similar for the measures readme.txt and measures_update
+        
+        # create a bad data readme.txt file from the valid one
+        measReadmePath = os.path.join(self.testRundataPath,'geodetic/readme.txt')
+        # read in the valid contents
+        with open(measReadmePath, 'r') as fid:
+            readmeLines = fid.readlines()
+        # rename it to preserve it
+        os.replace(measReadmePath, os.path.join(self.testRundataPath,'geodetic/readme.txt.orig'))
+        
+        # create a readme with garbage in the the 2nd line
+        readmeLines[1] = "this is not right"
+        with open(measReadmePath, 'w') as fid:
+            fid.writelines(readmeLines[:3])
+            
+        # measures_update badreadme test
+        try:
+            exceptionSeen = False
+            # this check happens before the age is determined, so no need to backdate the readme.txt file here
+            casaconfig.measures_update(self.testRundataPath)
+        except casaconfig.BadReadme as exc:
+            print(str(exc))
+            exceptionSeen = True
+        except Exception as exc:
+            print("unexpected exception seen when testing for BadRadme in measures_update")
+            print(str(exc))
+        self.assertTrue(exceptionSeen, "BadReadme not seen from measures_update")
+
+        # restore original measures readme.txt
+        os.replace(os.path.join(self.testRundataPath,'geodetic/readme.txt.orig'), measReadmePath)
+
+        # NotWritable with measures_update requires that there already be measures data there
+
+        # get the current permissions of the testRundataPath
+        orig_pstat = stat.S_IMODE(os.stat(self.testRundataPath).st_mode)
+        print('orig_pstat = %s' % orig_pstat)
+        # a bitmask that's the opposite of all of the write permission bits
+        no_write = ~stat.S_IWUSR & ~stat.S_IWGRP & ~stat.S_IWOTH
+        # remove the write permissions
+        pstat = orig_pstat & no_write
+        print('pstat = %s' % pstat)
+        os.chmod(self.testRundataPath,pstat)
+
+
+        # measures_update NotWritable
+        try:
+            exceptionSeen = False
+            # force and update to test this exception
+            casaconfig.measures_update(self.testRundataPath, force=True)
+        except casaconfig.NotWritable as exc:
+            exceptionSeen = True
+        except Exception as exc:
+            print("unexpected exception seen when testing for NotWritable in measures_update")
+            print(str(exc))
+            import traceback
+            traceback.print_exc()
+            
+        # reset to original permissions before anything else is checked
+        os.chmod(self.testRundataPath,orig_pstat)
+        
+        self.assertTrue(exceptionSeen, "NotWritable not seen from measures_update")
+
+        
+        
 if __name__ == '__main__':
 
     unittest.main()

@@ -138,7 +138,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     import fcntl
 
     from casaconfig import measures_available
-    from casaconfig import AutoUpdatesNotAllowed, UnsetMeasurespath, RemoteError, NotWritable, BadReadme, BadLock
+    from casaconfig import AutoUpdatesNotAllowed, UnsetMeasurespath, RemoteError, NotWritable, BadReadme, BadLock, NoReadme
 
     from .print_log_messages import print_log_messages
     from .get_data_lock import get_data_lock
@@ -149,6 +149,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
         from .. import config as _config
         path = _config.measurespath
 
+    print("casaconfig.measures_update path = %s" % path)
     if path is None:
         raise UnsetMeasurespath('measures_update: path is None and has not been set in config.measurespath. Provide a valid path and retry.')
 
