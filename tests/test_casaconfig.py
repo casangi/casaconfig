@@ -33,7 +33,7 @@ class casaconfig_test(unittest.TestCase):
         for f in [self.test_configpath, self.test_siteconfigpath]:
             if os.path.isfile(f):
                 os.remove(f)
-
+                
         self.rmTestDirs();
 
         if os.path.isfile(os.path.expanduser("~/.casa/config.py.user")):
@@ -147,7 +147,9 @@ class casaconfig_test(unittest.TestCase):
         f.write("# Test Config File\n")
         f.write("measurespath='%s'\n" % self.emptyPath)
         f.close()
-        proc = subprocess.Popen('{} -c "import casatools"'.format(sys.executable), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+
+        # ensure that any site config is not used
+        proc = subprocess.Popen('{} -c "import casatools" --nositeconfig'.format(sys.executable), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         (output, _) = proc.communicate()
 
         p_status = proc.wait()
@@ -216,7 +218,8 @@ class casaconfig_test(unittest.TestCase):
         test_string += "import casatools; "
         test_string += "assert('{}' == casatools.utils.utils().measurespath())".format(self.testRundataPath)
 
-        proc = subprocess.Popen('{} -c "{}"'.format(sys.executable,test_string), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        # ensure that no site config file is used
+        proc = subprocess.Popen('{} -c "{}" --nositeconfig'.format(sys.executable,test_string), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         (output, _) = proc.communicate()
 
         p_status = proc.wait()
@@ -258,7 +261,8 @@ class casaconfig_test(unittest.TestCase):
         f.close()
 
         # start a new casatools, which should update the measures to the most recent version
-        proc = subprocess.Popen('{} -c "import casatools"'.format(sys.executable), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        # make sure no site config file is used
+        proc = subprocess.Popen('{} -c "import casatools" --nositeconfig'.format(sys.executable), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         (output, _) = proc.communicate()
 
         p_status = proc.wait()
@@ -284,7 +288,8 @@ class casaconfig_test(unittest.TestCase):
         fc.close()
 
         # it should fail if this attempt is made when that location does not exist
-        proc = subprocess.Popen('{} -c "import casatools"'.format(sys.executable), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        # ensure that no site config file is used
+        proc = subprocess.Popen('{} -c "import casatools" --nositeconfig'.format(sys.executable), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         (output, _) = proc.communicate()
 
         p_status = proc.wait()
@@ -293,7 +298,7 @@ class casaconfig_test(unittest.TestCase):
 
         # create testRundataPath and try again
         os.mkdir(self.testRundataPath)
-        proc = subprocess.Popen('{} -c "import casatools"'.format(sys.executable), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        proc = subprocess.Popen('{} -c "import casatools" --nositeconfig'.format(sys.executable), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         (output, _) = proc.communicate()
 
         p_status = proc.wait()
@@ -426,7 +431,7 @@ class casaconfig_test(unittest.TestCase):
                 msgs += 'expected result for "{}" not found; '.format(k)
             else:
                 if expectedDict[k] != resultsDict[k]:
-                    msgs += 'unexpected result for "{}"; '.format(k)
+                    msgs += 'unexpected result for "{}" : "{}" vs "{}"; '.format(k, expectedDict[k], resultsDict[k])
         return msgs
         
 
@@ -493,12 +498,20 @@ class casaconfig_test(unittest.TestCase):
         msgs = self.do_config_check(expectedDict, noconfig=False, nositeconfig=False)
         self.assertTrue(len(msgs)==0, "failed : config import with error in site : " + msgs)
 
-        # unset CASASITECONFIG to ignore the site config file and try again, the site config should not be seen
+        # unset CASASITECONFIG to ignore the site config file and try again, the problem site config should not be seen
         os.environ.pop('CASASITECONFIG')
 
         # the failure is now gone
         expectedDict["failed"] = "0"
-        
+
+        # but there may be a real site config file in a standard location
+        # auto updates are assumed to be on if there is a site config file
+        has_site_config = os.path.exists("/opt/casa/siteconfig.py") or os.path.exists("/home/casa/casasiteconfig.py")
+        if has_site_config:
+            expectedDict["loaded"] = "3"
+            expectedDict["measures_auto_update"] = "False"
+            expectedDict["data_auto_update"] = "False"
+           
         msgs = self.do_config_check(expectedDict, noconfig=False, nositeconfig=False)
         self.assertTrue(len(msgs)==0, "failed : config import with CASASITECONFIG unset : " + msgs)
 
@@ -659,7 +672,8 @@ class casaconfig_test(unittest.TestCase):
 
         test_string = test_string_all
         test_string += "casaconfig.measures_update(); "
-        proc = subprocess.Popen('{} -c "{}"'.format(sys.executable,test_string), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        # ensure no site config
+        proc = subprocess.Popen('{} -c "{}" --nositeconfig'.format(sys.executable,test_string), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         (output, _) = proc.communicate()
 
         p_status = proc.wait()
@@ -671,7 +685,8 @@ class casaconfig_test(unittest.TestCase):
 
         test_string = test_string_all
         test_string += "casaconfig.pull_data(); "
-        proc = subprocess.Popen('{} -c "{}"'.format(sys.executable,test_string), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        # ensure no site config
+        proc = subprocess.Popen('{} -c "{}" --nositeconfig'.format(sys.executable,test_string), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         (output, _) = proc.communicate()
 
         p_status = proc.wait()
@@ -683,7 +698,7 @@ class casaconfig_test(unittest.TestCase):
 
         test_string = test_string_all
         test_string += "casaconfig.data_update(); "
-        proc = subprocess.Popen('{} -c "{}"'.format(sys.executable,test_string), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        proc = subprocess.Popen('{} -c "{}" --nositeconfig'.format(sys.executable,test_string), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         (output, _) = proc.communicate()
 
         p_status = proc.wait()
@@ -695,7 +710,7 @@ class casaconfig_test(unittest.TestCase):
 
         test_string = test_string_all
         test_string += "di=casaconfig.get_data_info(); "
-        proc = subprocess.Popen('{} -c "{}"'.format(sys.executable,test_string), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        proc = subprocess.Popen('{} -c "{}" --nositeconfig'.format(sys.executable,test_string), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         (output, _) = proc.communicate()
 
         p_status = proc.wait()
@@ -707,7 +722,7 @@ class casaconfig_test(unittest.TestCase):
 
         test_string = test_string_all
         test_string += "casaconfig.do_auto_updates(config); "
-        proc = subprocess.Popen('{} -c "{}"'.format(sys.executable,test_string), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        proc = subprocess.Popen('{} -c "{}" --nositeconfig'.format(sys.executable,test_string), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         (output, _) = proc.communicate()
 
         p_status = proc.wait()
