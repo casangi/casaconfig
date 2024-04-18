@@ -301,10 +301,18 @@ class casaconfig_test(unittest.TestCase):
         self.assertTrue(ref, "ImportError Found")
 
         # final check that the expected versions were found
+        # if the most recent rundata is < 1 day old then measuresdata will also be < 1 day old the most recent measures on astron
+        # may be newer, also, do not rely on the cached measures versions to check here
         dataInfo = casaconfig.get_data_info(self.testRundataPath)
         expectedDataVersion = casaconfig.data_available()[-1]
-        expectedMeasVersion = self.get_meas_avail()[-1]
+        availMeasures = casaconfig.measures_available()
+        expectedMeasVersion = availMeasures[-1]
         ref = (dataInfo['casarundata']['version'] == expectedDataVersion) and (dataInfo['measures']['version'] == expectedMeasVersion)
+        if not ref:
+            # try the penultimate version
+            expectedMeasVersion = availMeasures[-2]
+            ref = (dataInfo['casarundata']['version'] == expectedDataVersion) and (dataInfo['measures']['version'] == expectedMeasVersion)
+            
         self.assertTrue(ref, "Expected versions not installed")
 
     def test_daily_update(self):
@@ -324,7 +332,6 @@ class casaconfig_test(unittest.TestCase):
         rundataAge = dataInfo['casarundata']['age']
         measVers = dataInfo['measures']['version']
         measAge = dataInfo['measures']['age']
-
 
         self.assertTrue(oldVersion == rundataVers, "old version was not installed as expected")
         self.assertTrue((rundataAge < 1.0) and (measAge < 1.0), "recent installed old versions do not have the expected recent age")
@@ -363,9 +370,15 @@ class casaconfig_test(unittest.TestCase):
 
         # data should update now
         casaconfig.data_update(self.testRundataPath)
-
-        # what's the age now
-        dataInfo = casaconfig.get_data_info(self.testRundataPath)
+        # measures should also update now, unless the casaconfig that was just installed was built very recently (within the last day)
+        # first, check the installed measures version, if that IS the most recent version then artifically install the previous one
+        measDataVers = casaconfig.get_data_info(self.testRundataPath, type='measures')['version']
+        if measDataVers == self.get_meas_avail()[-1] :
+            casaconfig.measures_update(self.testRundataPath,version=self.get_meas_avail()[-2])
+        # and backdate the measures data to be sure it updates
+        os.utime(measuresReadmePath,(olderTime,olderTime))
+        
+        # now we should expect measures_update to install the most recent version
         casaconfig.measures_update(self.testRundataPath)
 
         dataInfo = casaconfig.get_data_info(self.testRundataPath)
@@ -373,9 +386,9 @@ class casaconfig_test(unittest.TestCase):
         checkMeasVers = dataInfo['measures']['version']
 
         # IF a new measures tarball was made available while this test was running then the updated measure here may be one more than the previous
-        # update, so long as this is the most recent measures this test is OK
+        # update, so long as this is the most recent measures this test is OK (do not rely on the cached values for this check)
         expectedMeasVers = casaconfig.measures_available()[-1]
-        self.assertTrue((checkRundataVers != rundataVers) and (checkMeasVers == expectedMeasVers), "versions are not as expected after a measures update")
+        self.assertTrue((checkRundataVers != rundataVers) and (checkMeasVers == expectedMeasVers), "versions are not as expected after a data update")
 
     def do_config_check(self, expectedDict, noconfig, nositeconfig):
         '''Launch a separate python to load the config files, using --noconfig --nositeconfig as requested, the expectedDict contains expected values'''
