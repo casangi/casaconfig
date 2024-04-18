@@ -182,12 +182,13 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
         
     # a pull will happen, unless the version string is not available
 
-    if available_data is None:
-        # this may raise a RemoteError, no need to catch that here but it may need to be caught upstream
-        available_data = data_available()
-
     if version is None:
         # need a version, use most recent available
+        
+        if available_data is None:
+            # this may raise a RemoteError, no need to catch that here but it may need to be caught upstream
+            available_data = data_available()
+            
         version = available_data[-1]
 
     expectedMeasuresVersion = None
@@ -199,10 +200,15 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
             return
         version = releaseInfo['casarundata']
         expectedMeasuresVersion = releaseInfo['measures']
-
-    if version not in available_data:
-        print_log_messages('version %s not found on CASA server, use casaconfig.data_available() for a list of casarundata versions' % version, logger, True)
-        return
+    else:
+        # requested version must be available
+        if available_data is None:
+            # this may raise a RemoteError, no need to catch that here but it may need to be caught upstream
+            available_data = data_available()
+            
+        if version not in available_data:
+            print_log_messages('version %s not found on CASA server, use casaconfig.data_available() for a list of casarundata versions' % version, logger, True)
+            return
 
     if not os.path.exists(path):
         # make dirs all the way down path if possible
