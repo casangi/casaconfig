@@ -10,7 +10,6 @@ dependencies = [
     "certifi>=2023.5.7",
 ]
 requires-python = ">=3.8"
-readme = "README.md"
 license = {file = "LICENSE"}
 
 [project.urls]
