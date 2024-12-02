@@ -1,0 +1,25 @@
+[project]
+name = "casaconfig"
+version = "1.0.2"
+description = "CASA Operational Configuration Package"
+readme = 'README.md'
+authors = [
+    {name = "National Radio Astronomy Observatory",email = "casa-feedback@nrao.edu"},
+]
+dependencies = [
+    "certifi>=2023.5.7",
+]
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+
+[project.urls]
+Homepage = "https://casa.nrao.edu/"
+Documentation = "https://casadocs.readthedocs.io/"
+Repository = "https://github.com/casangi/casaconfig.git"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages]
+find = {}
