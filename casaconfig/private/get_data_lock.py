@@ -29,6 +29,9 @@ def get_data_lock(path, fn_name):
 
     This function is intended for internal casaconfig use.
 
+    If there is not network (have_network returns False) then the lock file is not
+    set or initialized and a RemoteError exception is raised.
+
     Parameters
        - path (str) - The location where 'data_update.log' is to be found.
        - fn_name (str) - A string giving the name of the calling function to be recorded in the lock file.
@@ -48,6 +51,11 @@ def get_data_lock(path, fn_name):
     from datetime import datetime
 
     from casaconfig import BadLock
+    from casaconfig import RemoteError
+    from .have_network import have_network
+
+    if not have_network():
+        raise RemoteError("No network, lock file has not been set, unable to continue.")
 
     if not os.path.exists(path):
         raise BadLock("path to contain lock file does not exist : %s" % path)
