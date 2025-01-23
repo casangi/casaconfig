@@ -750,6 +750,44 @@ class casaconfig_test(unittest.TestCase):
         # these tests requires an already installed set of data
         self.populate_testrundata()
 
+        # BadLock
+        print("\nTesting for BadLock in test_exceptions_with_data")
+        # insert a non-empty lock file
+        exceptionSeen = False
+        lockPath = os.path.join(self.testRundataPath,'data_update.lock')
+        with open(lockPath,'w') as f:
+            f.write("test lock file, not empty")
+
+        # with measures_update
+        try:
+            exceptionSeen = False
+            # try to install an older measures, should fail because of the lock file
+            ma = casaconfig.measures_available()
+            casaconfig.measures_update(self.testRundataPath, version=ma[0])
+        except casaconfig.BadLock as exc:
+            exceptionSeen = True
+        except Exception as exc:
+            print("unexepected exception seen while testing for expected BadLock exception in measures_update")
+            print(str(exc))
+        self.assertTrue(exceptionSeen, "BadLock not seen as expected in measures_update with existing data test in")
+        
+        # with data_update
+        try:
+            exceptionSeen = False
+            # try to install an older measures, should fail because of the lock file
+            da = casaconfig.data_available()
+            casaconfig.data_update(self.testRundataPath, version=da[0])
+        except casaconfig.BadLock as exc:
+            exceptionSeen = True
+        except Exception as exc:
+            print("unexepected exception seen while testing for expected BadLock exception in data_update")
+            print(str(exc))
+        self.assertTrue(exceptionSeen, "BadLock not seen as expected in data_update with existing data test")
+        # remove the lock file
+        os.remove(lockPath)
+        print("BadLock test passed in test_exceptions_with_data\n")
+            
+
         # BadReadme
 
         # create a bad data readme.txt file from the valid one
