@@ -96,8 +96,9 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
     Raises
        - casaconfig.BadLock - raised when the lock file is not empty when a lock is requested
        - casaconfig.BadReadme - raised when the readme.txt file found at path does not contain the expected list of installed files or there was an unexpected change while the data lock is on
+       - casaconfig.NoNetwork - raised where this is no network
        - casaconfig.NotWritable - raised when the user does not have write permission to path
-       - casaconfig.RemoteError - raised by data_available when the list of available data versions could not be fetched
+       - casaconfig.RemoteError - raised by data_available when the list of available data versions could not be fetched for some reason other than no network
        - casaconfig.UnsetMeasurespath - raised when path is None and and measurespath has not been set in config.
 
     """
@@ -168,7 +169,7 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
         # the readme file looks as expected, pull if the version is different or force is true
         if version is None:
             # use most recent available
-            # this may raise a RemoteError, no need to catch that here but it may need to be caught upstream
+            # this may raise RemoteError or NoNetwork, no need to catch that here but it may need to be caught upstream
             available_data = data_available()
             version = available_data[-1]
 
@@ -186,7 +187,7 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
         # need a version, use most recent available
 
         if available_data is None:
-            # this may raise a RemoteError, no need to catch that here but it may need to be caught upstream
+            # this may raise RemoteError or NoNetwork, no need to catch that here but it may need to be caught upstream
             available_data = data_available()
 
         version = available_data[-1]
@@ -203,7 +204,7 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
     else:
         # requested version must be available
         if available_data is None:
-            # this may raise a RemoteError, no need to catch that here but it may need to be caught upstream
+            # this may raise RemoteError or NoNetwork, no need to catch that here but it may need to be caught upstream
             available_data = data_available()
 
         if version not in available_data:
@@ -224,6 +225,7 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
     try:
         print_log_messages('pull_data using version %s, acquiring the lock ... ' % version, logger)
 
+        # attempting to get the lock will raise NoNetwork if there is no network and the lock will not be set, catch and reemit that in this try block
         lock_fd = get_data_lock(path, 'pull_data')
         # the BadLock exception that may happen here is caught below
 
@@ -296,6 +298,10 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
         msgs.append('This should not happen unless multiple sessions are trying to update data at the same time and one experienced problems or was done out of sequence')
         msgs.append('Check for other updates in progress or choose a different path or clear out this path and try again')
         print_log_messages(msgs, logger, True)
+        raise
+
+    except NoNetwork as exc:
+        # there is no network, it should be self explanatory so just re-raise it
         raise
 
     except Exception as exc:

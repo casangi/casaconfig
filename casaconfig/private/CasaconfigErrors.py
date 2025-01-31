@@ -36,7 +36,12 @@ class RemoteError(Exception):
 
 class NotWritable(Exception):
     """Raised when the path is not writable by the user"""
+    pass
 
 class UnsetMeasurespath(Exception):
     """Raised when a path argument is None"""
+    pass
+
+class NoNetwork(Exception):
+    """Raised when there is no network connection."""
     pass
