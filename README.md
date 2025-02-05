@@ -50,7 +50,7 @@ dist
 └── casaconfig-[VERSION].tar.gz
 ```
 
-### Setting up Casa branches for casaconfig development
+### Setting up CASA branches for casaconfig development
 
 The casaconfig build process publishes test wheels to test.pypi.org
 
