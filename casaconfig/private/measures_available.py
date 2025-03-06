@@ -32,7 +32,8 @@ def measures_available():
        version names returned as list of strings
 
     Raises:
-       - casaconfig.RemoteError - raised when when a socket.gaierror is seen, likely due to no network connection
+       - casaconfig.NoNetwork - raised when there is no network (have_data returns False)
+       - casaconfig.RemoteError - raised when when a socket.gaierror is seen, unlikely due to the have_network check
        - Exception: raised when any unexpected exception happens
 
     """
@@ -40,7 +41,13 @@ def measures_available():
     import socket
 
     from casaconfig import RemoteError
+    from casaconfig import NoNetwork
 
+    from .have_network import have_network
+
+    if not have_network():
+        raise NoNetwork("can not find the list of available measures data")
+    
     files = []
     try:
         ftp = FTP('ftp.astron.nl')

@@ -22,15 +22,15 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
     The verbose argument controls the level of information provided when this function when the data
     are unchanged for expected reasons. A level of 0 prints and logs nothing. A
     value of 1 logs the information and a value of 2 logs and prints the information.
-  
-    The path must either contain a previously installed version of casarundata 
+
+    The path must either contain a previously installed version of casarundata
     or it must not exist or be empty.
 
     If path is None then config.measurespath will be used.
 
     If version is None (the default) then the most recent version is pulled.
 
-    If version is "release" then the version associated with the release in 
+    If version is "release" then the version associated with the release in
     the dictionary returned by get_data_info is used. If there is no release
     version information known then an error message is printed and nothing is
     checked or installed.
@@ -43,20 +43,20 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
 
     A text file (readme.txt at path) records the version string, the date
     when that version was installed in path, and the files installed into path.
-    This file is used to determine if the contents are a previously installed 
+    This file is used to determine if the contents are a previously installed
     version. If path is not empty then this file must exist with the expected
     contents in order for pull_data to proceed.
 
-    If the version to be pulled matches the version in the readme.txt file then 
+    If the version to be pulled matches the version in the readme.txt file then
     pull_data does nothing unless force is True. No error messages will result when the
     version already matches what was previously installed (no installation is then
     necessary unless force is True).
 
-    The measures tables included in casarundata will typically not be the most 
+    The measures tables included in casarundata will typically not be the most
     recent version. To get the most recent measures data, measures_update
     should be used after pull_data.
 
-    If path contains a previously installed version then all of the files listed in 
+    If path contains a previously installed version then all of the files listed in
     the manifest part of the readme.txt file are first removed from path. This ensures
     that files not present in the version being installed are removed in moving to the
     other version.
@@ -65,23 +65,23 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
     or data_update) from updating any files in path at the same time. When locked, the
     lock file (data_update.lock in path) contains information about the process that
     has the lock. When pull_data gets the lock it checks the readme.txt file in path
-    to make sure that a copy of the data should still be pulled (the version doesn't 
+    to make sure that a copy of the data should still be pulled (the version doesn't
     match what was requested, or force is True). If the lock file is not
     empty then a previous update of path (pull_data, data_update, or measures_update)
     did not exit as expected and the contents of path are suspect. In that case, pull_data
     will report that as an error and nothing will be updated. The lock file can be checked
     to see the details of when that file was locked. The lock file can be removed and
     pull_data can then be used to install the desired version. It may be safest in that case
-    to remove path completely or use a different path and run pull_data to install 
+    to remove path completely or use a different path and run pull_data to install
     a fresh copy of the desired version.
 
-    Some of the tables installed by pull_data are only read when casatools starts. Use of 
-    pull_data should typically be followed by a restart of CASA so that 
+    Some of the tables installed by pull_data are only read when casatools starts. Use of
+    pull_data should typically be followed by a restart of CASA so that
     any changes are seen by the tools and tasks that use this data.
 
     **Note:** When version is None (the default), data_available is always used to find out
     what versions are available. There is no check on when the data were last updated before
-    calling data_available (as there is in the two update functions). 
+    calling data_available (as there is in the two update functions).
 
     Parameters
        - path (str) - Folder path to place casarundata contents. It must be empty or not exist or contain a valid, previously installed version. If not set then config.measurespath is used.
@@ -96,8 +96,9 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
     Raises
        - casaconfig.BadLock - raised when the lock file is not empty when a lock is requested
        - casaconfig.BadReadme - raised when the readme.txt file found at path does not contain the expected list of installed files or there was an unexpected change while the data lock is on
+       - casaconfig.NoNetwork - raised where this is no network
        - casaconfig.NotWritable - raised when the user does not have write permission to path
-       - casaconfig.RemoteError - raised by data_available when the list of available data versions could not be fetched
+       - casaconfig.RemoteError - raised by data_available when the list of available data versions could not be fetched for some reason other than no network
        - casaconfig.UnsetMeasurespath - raised when path is None and and measurespath has not been set in config.
 
     """
@@ -131,7 +132,7 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
     available_data = None
     currentVersion = None
     currentDate = None
-    
+
     # attempt a pull if path does not exist or is empty (except for any lock file, handled later)
     readmeInfo = get_data_info(path, logger, type='casarundata')
     do_pull = readmeInfo is None
@@ -164,11 +165,11 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
             # this shouldn't happen
             # no lock has been set yet, safe to raise this exception without worrying about the lock
             raise BadReadme('pull_data: the readme.txt file at path did not contain the expected list of installed files')
-            
+
         # the readme file looks as expected, pull if the version is different or force is true
         if version is None:
             # use most recent available
-            # this may raise a RemoteError, no need to catch that here but it may need to be caught upstream
+            # this may raise RemoteError or NoNetwork, no need to catch that here but it may need to be caught upstream
             available_data = data_available()
             version = available_data[-1]
 
@@ -179,16 +180,16 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
             # safe to return here, no lock has been set
             print_log_messages('pull_data: version is already at the expected version and force is False. Nothing was changed', logger, verbose=verbose)
             return
-        
+
     # a pull will happen, unless the version string is not available
 
     if version is None:
         # need a version, use most recent available
-        
+
         if available_data is None:
-            # this may raise a RemoteError, no need to catch that here but it may need to be caught upstream
+            # this may raise RemoteError or NoNetwork, no need to catch that here but it may need to be caught upstream
             available_data = data_available()
-            
+
         version = available_data[-1]
 
     expectedMeasuresVersion = None
@@ -203,9 +204,9 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
     else:
         # requested version must be available
         if available_data is None:
-            # this may raise a RemoteError, no need to catch that here but it may need to be caught upstream
+            # this may raise RemoteError or NoNetwork, no need to catch that here but it may need to be caught upstream
             available_data = data_available()
-            
+
         if version not in available_data:
             print_log_messages('version %s not found on CASA server, use casaconfig.data_available() for a list of casarundata versions' % version, logger, True)
             return
@@ -224,9 +225,10 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
     try:
         print_log_messages('pull_data using version %s, acquiring the lock ... ' % version, logger)
 
+        # attempting to get the lock will raise NoNetwork if there is no network and the lock will not be set, catch and reemit that in this try block
         lock_fd = get_data_lock(path, 'pull_data')
         # the BadLock exception that may happen here is caught below
-        
+
         do_pull = True
         if not force:
             # need to recheck any readme file that may be present here
@@ -283,7 +285,7 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
 
     except BadLock as exc:
         # the path is known to exist so this means that the lock file was not empty and it's not locked
-        msgs = str(exc)
+        msgs = [str(exc)]
         msgs.append('The lock file at %s is not empty.' % path)
         msgs.append('A previous attempt to update path may have failed or exited prematurely.')
         msgs.append('It may be best to completely repopulated path using pull_data and measures_update.')
@@ -292,12 +294,16 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
         raise
     except BadReadme as exc:
         # something is wrong in the readme after an update was triggered and locked, this shouldn't happen, print more context and reraise this
-        msgs = str(exc)
+        msgs = [str(exc)]
         msgs.append('This should not happen unless multiple sessions are trying to update data at the same time and one experienced problems or was done out of sequence')
         msgs.append('Check for other updates in progress or choose a different path or clear out this path and try again')
         print_log_messages(msgs, logger, True)
         raise
-    
+
+    except NoNetwork as exc:
+        # there is no network, it should be self explanatory so just re-raise it
+        raise
+
     except Exception as exc:
         msgs = []
         msgs.append('ERROR! : Unexpected exception while populating casarundata version %s to %s' % (version, path))
@@ -311,5 +317,5 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
             if clean_lock:
                 lock_fd.truncate(0)
             lock_fd.close()
-        
+
     return

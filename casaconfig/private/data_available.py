@@ -36,7 +36,8 @@ def data_available():
        list - version names returned as list of strings
 
     Raises
-       - casaconfig.RemoteError - Raised when there is an error fetching some remote content
+       - casaconfig.NoNetwork - Raised where there is no network seen, can not continue
+       - casaconfig.RemoteError - Raised when there is an error fetching some remote content for some reason other than no network
        - Exception - Unexpected exception while getting list of available casarundata versions
 
     """
@@ -48,6 +49,12 @@ def data_available():
     import certifi
 
     from casaconfig import RemoteError
+    from casaconfig import NoNetwork
+
+    from .have_network import have_network
+
+    if not have_network():
+        raise NoNetwork("No network, can not find the list of available data.")
     
     class LinkParser(html.parser.HTMLParser):
         def reset(self):

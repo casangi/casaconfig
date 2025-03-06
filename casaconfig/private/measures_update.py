@@ -119,7 +119,8 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
        casaconfig.BadReadme - raised when something unexpected is found in the readme or the readme changed after an update is in progress
        casaconfig.NoReadme - raised when the readme.txt file is not found at path (path also may not exist)
        casaconfig.NotWritable - raised when the user does not have permission to write to path
-       casaconfig.RemoteError - raised by measures_available when the remote list of measures could not be fetched
+       casaconfig.NoNetwork - raised by measuers_available or when getting the lock file if there is no network.
+       casaconfig.RemoteError - raised by measures_available when the remote list of measures could not be fetched, not due to no network.
        casaconfig.UnsetMeasurespath - raised when path is None and has not been set in config
        Exception - raised when something unexpected happened while updating measures
     
@@ -138,7 +139,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     import fcntl
 
     from casaconfig import measures_available
-    from casaconfig import AutoUpdatesNotAllowed, UnsetMeasurespath, RemoteError, NotWritable, BadReadme, BadLock, NoReadme
+    from casaconfig import AutoUpdatesNotAllowed, UnsetMeasurespath, RemoteError, NotWritable, BadReadme, BadLock, NoReadme, NoNetwork
 
     from .print_log_messages import print_log_messages
     from .get_data_lock import get_data_lock
@@ -208,8 +209,11 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
             # get the current most recent version
             try:
                 checkVersion = measures_available()[-1]
-            except RemoteError as exc:
+            except NoNetwork as exc:
                 # no network, no point in continuing, just reraise
+                raise exc
+            except RemoteError as exc:
+                # bad network?, no point in continuing, just reraise
                 raise exc                
             except:
                 # unsure what happened, leave it at none, which will trigger an update attempt, which might work

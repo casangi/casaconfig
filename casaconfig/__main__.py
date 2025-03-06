@@ -131,6 +131,10 @@ except casaconfig.RemoteError as exc:
     print("This is likely due to no network connection or bad connectivity to a remote site, wait and try again")
     sys.exit(1)
 
+except casaconfig.NoNetwork as exc:
+    print("No network seen, can not continue.")
+    sys.exit(1)
+
 except casaconfig.BadLock as exc:
     # the output produced by the update functions is sufficient, just re-echo the exception text itself
     print(str(exc))
