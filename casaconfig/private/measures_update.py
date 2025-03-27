@@ -18,6 +18,8 @@ this module will be included in the api
 def measures_update(path=None, version=None, force=False, logger=None, auto_update_rules=False, use_astron_obs_table=False, verbose=None):
     """
     Update or install the IERS data used for measures calculations from the ASTRON server at path.
+
+    Text inserted here for CAS-14571 to test casadocs branch builds for casaconfig. This should not be merged!
     
     Original data source used by ASTRON is here: https://www.iers.org/IERS/EN/DataProducts/data.html
 
