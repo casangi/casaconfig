@@ -1,6 +1,6 @@
 [project]
 name = "casaconfig"
-version = "1.0.3"
+version = "1.3.0"
 description = "CASA Operational Configuration Package"
 readme = 'README.md'
 authors = [
