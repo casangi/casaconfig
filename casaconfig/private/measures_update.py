@@ -130,13 +130,12 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     from datetime import datetime
     import sys
 
-    from ftplib import FTP
     import tarfile
     import re
     import ssl
     import urllib.request
     import certifi
-    import fcntl
+    import shutil
 
     from casaconfig import measures_available
     from casaconfig import AutoUpdatesNotAllowed, UnsetMeasurespath, RemoteError, NotWritable, BadReadme, BadLock, NoReadme, NoNetwork
@@ -248,7 +247,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
 
     # lock the measures_update.lock file
     lock_fd = None
-    clean_lock = True    # set to false if the contents are actively being u pdate and the lock file should not be cleaned one exception
+    clean_lock = True    # set to false if the contents are actively being update and the lock file should not be cleaned one exception
     try:
         print_log_messages('measures_update ... acquiring the lock ... ', logger)
 
@@ -290,13 +289,9 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
             if force:
                 print_log_messages('A measures update has been requested by the force argument', logger)
 
-            print_log_messages('  ... connecting to ftp.astron.nl ...', logger)
+            print_log_messages('  ... finding available measures at www.astron.nl ...', logger)
 
-            clean_lock = False
-            ftp = FTP('ftp.astron.nl')
-            rc = ftp.login()
-            rc = ftp.cwd('outgoing/Measures')
-            files = sorted([ff for ff in ftp.nlst() if (len(ff) > 0) and (not ff.endswith('.dat')) and (ftp.size(ff) > 0)])
+            files = measures_available()
 
             # target filename to download
             # for the non-force unspecified version case this can only get here if the age is > 1 day so there should be a newer version
@@ -306,16 +301,35 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
                 print_log_messages("measures_update can't find specified version %s" % target, logger, True)
 
             else:
-                # there are files to extract, make sure there's no past measures.ztar from a failed previous install
-                ztarPath = os.path.join(path,'measures.ztar')
-                if os.path.exists(ztarPath):
-                    os.remove(ztarPath)
+                # there are files to extract
+                # the name of the temporary file to hold the tarfile is measures.[last_extension] where
+                # last_extension is everything after the last [.] in the file, to preserve any information
+                # in that extension name about the type of compression involved
+                tmpTarName = 'measures'
+                extStart = target.rfind('.')
+                if extStart > 0:
+                    # there's no extension, or it's all an extension [which can't happen via measures_available]
+                    # then just use 'measures', otherwise tack on everything from that location
+                    tmpTarName += target[extStart:]
+                # make sure there's no past tmpTarName from a failed previous install
+                tmpTarPath = os.path.join(path,tmpTarName)
+                if os.path.exists(tmpTarPath):
+                    os.remove(tmpTarPath)
     
-                with open(ztarPath, 'wb') as fid:
-                    print_log_messages('  ... downloading %s from ASTRON server to %s ...' % (target, path), logger)
-                    ftp.retrbinary('RETR ' + target, fid.write)
+                print_log_messages('  ... downloading %s from ASTRON server to %s ...' % (target, path), logger)
 
-                ftp.close()
+                astronURL = 'https://www.astron.nl/iers'
+                context = ssl.create_default_context(cafile=certifi.where())
+                # just in case there's a redirect at astron the way there is for the go.nrao.edu site and casarundata
+                measuresURLroot = urllib.request.urlopen(astronURL, context=context).url
+                measuresURL = os.path.join(measuresURLroot, target)
+                
+                with urllib.request.urlopen(measuresURL, context=context, timeout=400) as response, open(tmpTarPath,'wb') as out_file:
+                    shutil.copyfileobj(response, out_file)
+
+                # it's at this point that this code starts modifying what's there so the lock file should
+                # not be removed on failure after this although it may leave that temp tar file around, but that's OK
+                clean_lock = False
 
                 # remove any existing measures readme.txt now in case something goes wrong during extraction
                 readme_path = os.path.join(path,'geodetic/readme.txt')
@@ -323,7 +337,9 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
                     os.remove(readme_path)
 
                 # extract from the fetched tarfile
-                with tarfile.open(ztarPath, mode='r:gz') as ztar:
+                # this should work for transparent compression, "ztar" here
+                # doesn't mean this only works for gz compression
+                with tarfile.open(tmpTarPath, mode='r:*') as ztar:
                     # the list of members to extract
                     x_list = []
                     for m in ztar.getmembers() :
@@ -341,13 +357,11 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
                     ztar.extractall(path=path,members=x_list)
                     ztar.close()
 
-                os.remove(ztarPath)
+                os.remove(tmpTarPath)
 
                 # create a new readme.txt file
                 with open(readme_path,'w') as fid:
                     fid.write("# measures data populated by casaconfig\nversion : %s\ndate : %s" % (target, datetime.today().strftime('%Y-%m-%d')))
-
-                print_log_messages('  ... measures data updated at %s' % path, logger)
 
                 clean_lock = True
             
