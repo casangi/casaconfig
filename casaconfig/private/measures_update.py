@@ -17,21 +17,23 @@ this module will be included in the api
 
 def measures_update(path=None, version=None, force=False, logger=None, auto_update_rules=False, use_astron_obs_table=False, verbose=None):
     """
-    Update or install the IERS data used for measures calculations from the ASTRON server at path.
+    Update or install the IERS data used for measures calculations from ASTRON into path.
     
     Original data source used by ASTRON is here: https://www.iers.org/IERS/EN/DataProducts/data.html
 
     If no update is necessary then this function will silently return.
 
-    The verbose argument controls the level of information provided when this function when the data
-    are unchanged for expected reasons. A level of 0 prints and logs nothing. A
-    value of 1 logs the information and a value of 2 logs and prints the information.
+    The verbose argument controls the level of information provided by this function when the data
+    are unchanged for expected reasons. A level of 0 outputs nothing. A
+    value of 1 sends any output to the logger and a value of 2 logs and prints the information.
+    The default value of the verbose argument is taken from the casaconfig_verbose config
+    value (defaults to 1).
 
     CASA maintains a separate Observatories table which is available in the casarundata
     collection through pull_data and data_update. The Observatories table found at ASTRON
     is not installed by measures_update and any Observatories file at path will not be changed
-    by using this function. This behavior can be changed by setting Force and use_astron_obs_table
-    both to True (use_astron_obs_table is ignored when Force is False).
+    by using this function. This behavior can be changed by setting force and use_astron_obs_table
+    both to True (use_astron_obs_table is ignored when force is False).
 
     A text file (readme.txt in the geodetic directory in path) records the measures version string
     and the date when that version was installed in path.
@@ -44,9 +46,9 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     If a specific version is not requested (the default) and the modification time of that text
     file is less than 24 hrs before now then this function does nothing unless force is True. When this
     function checks for a more recent version and finds that the installed version is the most recent
-    then modification time of that text file is checked to the current time even though nothing has
-    changed in path. This limits the number of attempts to update the measures data (including checking f\
-    or more recent data) to once per day. When the force argument is True and a specific version is
+    then the modification time of that text file is checked to the current time even though nothing has
+    changed in path. This limits the number of attempts to update the measures data (including checking
+    for more recent data) to once per day. When the force argument is True and a specific version is
     not requested then this function always checks for the latest version.
 
     When auto_update_rules is True then path must exist and contain the expected readme.txt file.
@@ -76,11 +78,11 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     especially if they may also be starting at that time. If a specific version is
     requested or force is True there is a risk that the measures may be updated while
     one of those other sessions are trying to load the same measures data, leading to
-    unpredictable results. The lock file will prevent simulateous updates from
-    happening but if each simultanous update eventually updates the same measures
+    unpredictable results. The lock file will prevent simultaneous updates from
+    happening but if each simultaneous update eventually updates the same measures
     location (because force is True or the updates are requesting different versions)
-    then the measures that any of those simultanous casatools modules sees is 
-    unpredictable. Avoid multiple, simultanous updates outside of the automatic
+    then the measures that any of those simultaneous casatools modules sees is 
+    unpredictable. Avoid multiple, simultaneous updates outside of the automatic
     update process.
 
     **Note:** during auto updates, measures_update requires that the expected 
@@ -92,10 +94,10 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     read and write permissions there). The version must then also be None and the force option 
     must be False.
 
-    **Note::** During use outside of auto updates, if path does not exist it will be created
+    **Note:** During use outside of auto updates, if path does not exist it will be created
     by this function.
 
-    **Notes::** During use outside of auto updates, if the readme.txt file exists but can not
+    **Notes:** During use outside of auto updates, if the readme.txt file exists but can not
     be read as expected **OR** that file does not exist but the contents of path appear to
     contain measures data (table names in the expected locations) then this function will
     print messages describing that and exit without changing anything at path. Using
@@ -105,26 +107,26 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
 
     Parameters
        - path (str=None) - Folder path to place updated measures data. Must contain a valid geodetic/readme.txt. If not set then config.measurespath is used.
-       - version (str=None) - Version of measures data to retrieve (usually in the form of yyyymmdd-160001.ztar, see measures_available()). Default None retrieves the latest.
+       - version (str=None) - Version of measures data to retrieve (usually in the form of WSRT_Measures_yyyymmdd-160001.ztar, see measures_available()). Default None retrieves the latest.
        - force (bool=False) - If True, always re-download the measures data. Default False will not download measures data if updated within the past day unless the version parameter is specified and different from what was last downloaded.
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
        - auto_update_rules (bool=False) - If True then the user must be the owner of path, version must be None, and force must be False.
-       - use_astron_obs_table (bool=False) - If True and Force is also True then keep the Observatories table found in the Measures tar tarball (possibly overwriting the Observatories table from casarundata).
+       - use_astron_obs_table (bool=False) - If True and force is also True then keep the Observatories table found in the Measures tar tarball (possibly overwriting the Observatories table from casarundata).
        - verbose (int=None) - Level of output, 0 is none, 1 is to logger, 2 is to logger and terminal, defaults to casaconfig_verbose in config dictionary.
         
     Returns
        None
 
     Raises
-       casaconfig.AutoUpdatesNotAllowed - raised when path does not exists as a directory or is not owned by the user when auto_update_rules is True
-       casaconfig.BadLock - raised when the lock file was not empty when found
-       casaconfig.BadReadme - raised when something unexpected is found in the readme or the readme changed after an update is in progress
-       casaconfig.NoReadme - raised when the readme.txt file is not found at path (path also may not exist)
-       casaconfig.NotWritable - raised when the user does not have permission to write to path
-       casaconfig.NoNetwork - raised by measuers_available or when getting the lock file if there is no network.
-       casaconfig.RemoteError - raised by measures_available when the remote list of measures could not be fetched, not due to no network.
-       casaconfig.UnsetMeasurespath - raised when path is None and has not been set in config
-       Exception - raised when something unexpected happened while updating measures
+       - casaconfig.AutoUpdatesNotAllowed - raised when path does not exists as a directory or is not owned by the user when auto_update_rules is True
+       - casaconfig.BadLock - raised when the lock file was not empty when found
+       - casaconfig.BadReadme - raised when something unexpected is found in the readme or the readme changed after an update is in progress
+       - casaconfig.NoReadme - raised when the readme.txt file is not found at path (path also may not exist)
+       - casaconfig.NotWritable - raised when the user does not have permission to write to path
+       - casaconfig.NoNetwork - raised by measuers_available or when getting the lock file if there is no network.
+       - casaconfig.RemoteError - raised by measures_available when the remote list of measures could not be fetched, not due to no network.
+       - casaconfig.UnsetMeasurespath - raised when path is None and has not been set in config
+       - Exception - raised when something unexpected happened while updating measures
     
     """
     import os
@@ -346,7 +348,8 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
                     fid.write("# measures data populated by casaconfig\nversion : %s\ndate : %s" % (target, datetime.today().strftime('%Y-%m-%d')))
 
                 clean_lock = True
-            
+                print_log_messages('  ... measures data updated at %s' % path, logger)
+
             # closing out the do_update
 
         # closing out the try block
