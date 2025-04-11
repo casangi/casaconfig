@@ -46,7 +46,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     If a specific version is not requested (the default) and the modification time of that text
     file is less than 24 hrs before now then this function does nothing unless force is True. When this
     function checks for a more recent version and finds that the installed version is the most recent
-    then the modification time of that text file is checked to the current time even though nothing has
+    then the modification time of that text file is changed to the current time even though nothing has
     changed in path. This limits the number of attempts to update the measures data (including checking
     for more recent data) to once per day. When the force argument is True and a specific version is
     not requested then this function always checks for the latest version.
@@ -97,7 +97,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     **Note:** During use outside of auto updates, if path does not exist it will be created
     by this function.
 
-    **Notes:** During use outside of auto updates, if the readme.txt file exists but can not
+    **Note:** During use outside of auto updates, if the readme.txt file exists but can not
     be read as expected **OR** that file does not exist but the contents of path appear to
     contain measures data (table names in the expected locations) then this function will
     print messages describing that and exit without changing anything at path. Using
