@@ -30,7 +30,8 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     CASA maintains a separate Observatories table which is available in the casarundata
     collection through pull_data and data_update. The Observatories table found at ASTRON
     is not installed by measures_update and any Observatories file at path will not be changed
-    by using this function.
+    by using this function. This behavior can be changed by setting Force and use_astron_obs_table
+    both to True (use_astron_obs_table is ignored when Force is False).
 
     A text file (readme.txt in the geodetic directory in path) records the measures version string
     and the date when that version was installed in path.
@@ -108,6 +109,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
        - force (bool=False) - If True, always re-download the measures data. Default False will not download measures data if updated within the past day unless the version parameter is specified and different from what was last downloaded.
        - logger (casatools.logsink=None) - Instance of the casalogger to use for writing messages. Default None writes messages to the terminal
        - auto_update_rules (bool=False) - If True then the user must be the owner of path, version must be None, and force must be False.
+       - use_astron_obs_table (bool=False) - If True and Force is also True then keep the Observatories table found in the Measures tar tarball (possibly overwriting the Observatories table from casarundata).
        - verbose (int=None) - Level of output, 0 is none, 1 is to logger, 2 is to logger and terminal, defaults to casaconfig_verbose in config dictionary.
         
     Returns
@@ -302,20 +304,6 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
 
             else:
                 # there are files to extract
-                # the name of the temporary file to hold the tarfile is measures.[last_extension] where
-                # last_extension is everything after the last [.] in the file, to preserve any information
-                # in that extension name about the type of compression involved
-                tmpTarName = 'measures'
-                extStart = target.rfind('.')
-                if extStart > 0:
-                    # there's no extension, or it's all an extension [which can't happen via measures_available]
-                    # then just use 'measures', otherwise tack on everything from that location
-                    tmpTarName += target[extStart:]
-                # make sure there's no past tmpTarName from a failed previous install
-                tmpTarPath = os.path.join(path,tmpTarName)
-                if os.path.exists(tmpTarPath):
-                    os.remove(tmpTarPath)
-    
                 print_log_messages('  ... downloading %s from ASTRON server to %s ...' % (target, path), logger)
 
                 astronURL = 'https://www.astron.nl/iers'
@@ -324,40 +312,34 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
                 measuresURLroot = urllib.request.urlopen(astronURL, context=context).url
                 measuresURL = os.path.join(measuresURLroot, target)
                 
-                with urllib.request.urlopen(measuresURL, context=context, timeout=400) as response, open(tmpTarPath,'wb') as out_file:
-                    shutil.copyfileobj(response, out_file)
-
                 # it's at this point that this code starts modifying what's there so the lock file should
                 # not be removed on failure after this although it may leave that temp tar file around, but that's OK
                 clean_lock = False
-
                 # remove any existing measures readme.txt now in case something goes wrong during extraction
                 readme_path = os.path.join(path,'geodetic/readme.txt')
                 if os.path.exists(readme_path):
                     os.remove(readme_path)
 
-                # extract from the fetched tarfile
-                # this should work for transparent compression, "ztar" here
-                # doesn't mean this only works for gz compression
-                with tarfile.open(tmpTarPath, mode='r:*') as ztar:
-                    # the list of members to extract
-                    x_list = []
-                    for m in ztar.getmembers() :
-                        if force and use_astron_obs_table:
-                            # exclude the *.old names in geodetic
-                           if not(re.search('geodetic',m.name) and re.search('.old',m.name)):
-                                x_list.append(m)
-                        else:
-                            # exclude the Observatories table and  *.old names in geodetic
-                            if not((re.search('geodetic',m.name) and re.search('.old',m.name)) or re.search('Observatories',m.name)):
-                                x_list.append(m)
+                # custom filter that incorporates data_filter to watch for dangerous members of the tar file and
+                # add filtering to remove the Observatories table (unless use_astron_obs_table is True) and
+                # the *.old tables that may be in the geodetic tree
+                def custom_filter(member, extractionPath):
+                    # member is a TarInfo instance and extractionPath is the destination path
+                    # use the 'data_filter' first to deal with dangerous members
+                    member = tarfile.data_filter(member, extractionPath)
+                    # always exclude *.old names in geodetic
+                    if (member is not None) and (re.search('geodetic',member.name) and re.search('.old',member.name)):
+                        member = None
+                    # the use_astron_obs_table argumen only has weight if force is True
+                    if (not (force and use_astron_obs_table)) and (member is not None) and (re.search('Observatories',member.name)):
+                        member = None
+                    return member
 
+                with urllib.request.urlopen(measuresURL, context=context, timeout=400) as tstream, tarfile.open(fileobj=tstream, mode='r|*') as tar :
                     # use the 'data' filter if available, revert to previous 'fully_trusted' behavior of not available
-                    ztar.extraction_filter = getattr(tarfile, 'data_filter', (lambda member, path: member))
-                    ztar.extractall(path=path,members=x_list)
-                    ztar.close()
-
-                os.remove(tmpTarPath)
+                    tar.extraction_filter = custom_filter
+                    tar.extractall(path=path)
+                    tar.close()
 
                 # create a new readme.txt file
                 with open(readme_path,'w') as fid:
