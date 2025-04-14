@@ -1,4 +1,4 @@
-# Copyright 2020 AUI, Inc. Washington DC, USA
+# Copyright 2023 AUI, Inc. Washington DC, USA
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -15,12 +15,11 @@
 this module will be included in the api
 """
 
-
 def measures_available():
     """
-    List available measures versions on the ASTRON server
+    List available measures versions on ASTRON at https://www.astron.nl/iers/
 
-    This returns a list of the measures files available on the ASTRON
+    This returns a list of the measures versions available on the ASTRON
     server. The version parameter of measures_update must be one
     of the values in that list if set (otherwise the most recent version
     in this list is used).
@@ -29,31 +28,57 @@ def measures_available():
        None
     
     Returns
-       version names returned as list of strings
+       list - version names returned as list of strings
 
-    Raises:
-       - casaconfig.RemoteError - raised when when a socket.gaierror is seen, likely due to no network connection
-       - Exception: raised when any unexpected exception happens
+    Raises
+       - casaconfig.RemoteError - Raised when there is an error fetching some remote content
+       - Exception - Unexpected exception while getting list of available measures versions
 
     """
-    from ftplib import FTP
-    import socket
+
+    import html.parser
+    import urllib.request
+    import urllib.error
+    import ssl
+    import certifi
 
     from casaconfig import RemoteError
 
-    files = []
+    class LinkParser(html.parser.HTMLParser):
+        def reset(self):
+            super().reset()
+            self.rundataList = []
+
+        def handle_starttag(self, tag, attrs):
+            if tag == 'a':
+                for (name, value) in attrs:
+                    # only care if this is an href and the value starts with
+                    # WSRT_Measures and has 'tar' after character 15 to exclude the "WSRT_Measures.ztar" file
+                    # without relying on the specific type of compression or nameing in  more detail than that
+                    if name == 'href' and (value.startswith('WSRT_Measures') and (value.rfind('tar')>15)):
+                        # only add it to the list if it's not already there
+                        if (value not in self.rundataList):
+                            self.rundataList.append(value)
+
     try:
-        ftp = FTP('ftp.astron.nl')
-        rc = ftp.login()
-        rc = ftp.cwd('outgoing/Measures')
-        files = ftp.nlst()
-        ftp.quit()
-        #files = [ff.replace('WSRT_Measures','').replace('.ztar','').replace('_','') for ff in files]
-        files = [ff for ff in files if (len(ff) > 0) and (not ff.endswith('.dat'))]
-    except socket.gaierror as gaierr:
-        raise RemoteError("Unable to retrieve list of available measures versions : " + str(gaierr)) from None
+        context = ssl.create_default_context(cafile=certifi.where())
+        with urllib.request.urlopen('https://www.astron.nl/iers', context=context, timeout=400) as urlstream:
+            parser = LinkParser()
+            encoding = urlstream.headers.get_content_charset() or 'UTF-8'
+            for line in urlstream:
+                parser.feed(line.decode(encoding))
+
+        # return the sorted list, earliest versions are first, newest is last
+        return sorted(parser.rundataList)
+
+    except urllib.error.URLError as urlerr:
+        raise RemoteError("Unable to retrieve list of available measures versions : " + str(urlerr)) from None
+        
     except Exception as exc:
         msg = "Unexpected exception while getting list of available measures versions : " + str(exc)
         raise Exception(msg)
-        
-    return files
+
+    # nothing to return if it got here, must have been an exception
+    return []
+
+    
