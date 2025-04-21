@@ -283,7 +283,7 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
 
     except BadLock as exc:
         # the path is known to exist so this means that the lock file was not empty and it's not locked
-        msgs = str(exc)
+        msgs = [str(exc)]
         msgs.append('The lock file at %s is not empty.' % path)
         msgs.append('A previous attempt to update path may have failed or exited prematurely.')
         msgs.append('It may be best to completely repopulated path using pull_data and measures_update.')
@@ -292,7 +292,7 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
         raise
     except BadReadme as exc:
         # something is wrong in the readme after an update was triggered and locked, this shouldn't happen, print more context and reraise this
-        msgs = str(exc)
+        msgs = [str(exc)]
         msgs.append('This should not happen unless multiple sessions are trying to update data at the same time and one experienced problems or was done out of sequence')
         msgs.append('Check for other updates in progress or choose a different path or clear out this path and try again')
         print_log_messages(msgs, logger, True)
