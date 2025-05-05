@@ -1,0 +1,16 @@
+.DS_Store
+
+# Python byte-compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Packaging and distribution
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/

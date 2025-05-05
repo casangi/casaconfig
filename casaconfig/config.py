@@ -30,11 +30,12 @@ Configuration state for all CASA python packages.
 DO NOT ADD new configuration variables here. Instead, add them in
 private/config_defaults_static.py.
 '''
-from .private import config_defaults as _config_defaults
-import traceback as __traceback
-import sys as __sys
 import os as __os
-import pkgutil as __pkgutil
+import sys as __sys
+import traceback as __traceback
+from importlib.util import find_spec
+
+from .private import config_defaults as _config_defaults
 from .private import io_redirect as _io
 from .private.get_argparser import get_argparser as __get_argparser
 
@@ -97,18 +98,18 @@ with _io.all_redirected(to=__os.devnull) if _module_execution else _io.no_redire
                          _config_defaults._globals( )[__v] = __orig[__v]
                      __loaded_config_files.append( __f )
         else:
-            ## config file is a package name
-            __pkg = __pkgutil.get_loader(__f)
-            if __pkg is not None:
+            # config file is a package name
+            __spec = find_spec(__f)
+            if __spec is not None:
                 try:
-                    __orig = { k: _config_defaults._globals( )[k] for k in __defaults }
-                    exec(open(__pkg.get_filename( )).read( ),__orig)
+                    __orig = {k: _config_defaults._globals()[k] for k in __defaults}
+                    exec(open(__spec.origin).read(), __orig)
                 except Exception as e:
-                    __errors_encountered[__pkg.get_filename( )] = __traceback.format_exc( )
+                    __errors_encountered[__spec.origin] = __traceback.format_exc()
                 else:
                     for __v in __defaults:
-                        _config_defaults._globals( )[__v] = __orig[__v]
-                    __loaded_config_files.append( __pkg.get_filename( ) )
+                        _config_defaults._globals()[__v] = __orig[__v]
+                    __loaded_config_files.append(__spec.origin)
 
 # if datapath is empty here, set it to [measurespath]
 if len(_config_defaults.datapath) == 0:

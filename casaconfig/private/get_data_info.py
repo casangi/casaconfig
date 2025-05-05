@@ -171,7 +171,7 @@ def get_data_info(path=None, logger=None, type=None):
 
     if type is None or type=='release':
         # release data versions
-        if importlib.resources.is_resource('casaconfig','release_data_readme.txt'):
+        if importlib.resources.files('casaconfig').joinpath('release_data_readme.txt').is_file():
             try:
                 casarundataVersion = None
                 measuresVersion = None
