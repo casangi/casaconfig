@@ -13,3 +13,7 @@ from .private.set_casacore_path import set_casacore_path
 from .private.get_config import get_config
 from .private.get_data_info import get_data_info
 from .private.CasaconfigErrors import *
+
+def version():
+  import importlib.metadata
+  return importlib.metadata.version(__name__)
