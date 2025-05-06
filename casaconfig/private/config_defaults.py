@@ -33,7 +33,6 @@ config_defaults_static.py (found in the same directory as this file).
 import os as _os
 import sys as _sys
 import time as _time
-import pkgutil as _pkgutil
 
 from .get_argparser import get_argparser as __get_argparser
 

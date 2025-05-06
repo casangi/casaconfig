@@ -32,12 +32,12 @@ def set_casacore_path(path=None):
        None
 
     """
-    import pkg_resources
+    import importlib.resources
     import os
     import re
     import sys
     
-    if path is None: path = pkg_resources.resource_filename('casaconfig', 'data/')
+    if path is None: path = str(importlib.resources.files('casaconfig').joinpath('data/'))
     path = os.path.abspath(os.path.expanduser(path))
 
     rctext = 'measures.directory: %s\n' % path

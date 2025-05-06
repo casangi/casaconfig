@@ -130,7 +130,6 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     
     """
     import os
-    import pkg_resources
     from datetime import datetime
     import sys
 
