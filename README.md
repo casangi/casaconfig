@@ -23,8 +23,8 @@ See the casaconfig API documentation on casadocs (links above).
 
 Also see the External Data section of casadocs for additional details
 
-- [latext External Data section on casadocs](https://casadocs.readthedocs.io/en/latest/notebooks/external-data.html)
-- [stable External Data section on casadocs](https://casadocs.readthedocs.io/en/latest/notebooks/external-data.html)
+- [latest External Data section on casadocs](https://casadocs.readthedocs.io/en/latest/notebooks/external-data.html)
+- [stable External Data section on casadocs](https://casadocs.readthedocs.io/en/stable/notebooks/external-data.html)
 
 ## Developers Instructions
 1. every push to the casaconfig repository will push a new wheel to [test pypi](https://test.pypi.org/project/casaconfig/#history)
