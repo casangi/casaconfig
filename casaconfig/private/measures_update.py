@@ -135,10 +135,6 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
 
     import tarfile
     import re
-    import ssl
-    import urllib.request
-    import certifi
-    import shutil
 
     from casaconfig import measures_available
     from casaconfig import AutoUpdatesNotAllowed, UnsetMeasurespath, RemoteError, NotWritable, BadReadme, BadLock, NoReadme, NoNetwork
@@ -147,6 +143,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     from .get_data_lock import get_data_lock
     from .get_data_info import get_data_info
     from .measures_available import measures_available
+    from .do_untar_url import do_untar_url
     
     if path is None:
         from .. import config as _config
@@ -307,22 +304,17 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
                 # there are files to extract
                 print_log_messages('  ... downloading %s from ASTRON server to %s ...' % (target, path), logger)
 
-                astronURL = 'https://www.astron.nl/iers'
-                context = ssl.create_default_context(cafile=certifi.where())
-                # just in case there's a redirect at astron the way there is for the go.nrao.edu site and casarundata
-                measuresURLroot = urllib.request.urlopen(astronURL, context=context).url
-                measuresURL = os.path.join(measuresURLroot, target)
-                
                 # it's at this point that this code starts modifying what's there so the lock file should
-                # not be removed on failure after this although it may leave that temp tar file around, but that's OK
+                # not be removed on failure from here on (until it succeeds)
                 clean_lock = False
+                
                 # remove any existing measures readme.txt now in case something goes wrong during extraction
                 readme_path = os.path.join(path,'geodetic/readme.txt')
                 if os.path.exists(readme_path):
                     os.remove(readme_path)
 
-                # custom filter that incorporates data_filter to watch for dangerous members of the tar file and
-                # add filtering to remove the Observatories table (unless use_astron_obs_table is True) and
+                # custom filter that incorporates 'data_filter' to watch for dangerous members of the tar file
+                # this adds filtering to remove the Observatories table (unless use_astron_obs_table is True) and
                 # the *.old tables that may be in the geodetic tree
                 def custom_filter(member, extractionPath):
                     # member is a TarInfo instance and extractionPath is the destination path
@@ -336,11 +328,10 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
                         member = None
                     return member
 
-                with urllib.request.urlopen(measuresURL, context=context, timeout=400) as tstream, tarfile.open(fileobj=tstream, mode='r|*') as tar :
-                    # use the 'data' filter if available, revert to previous 'fully_trusted' behavior of not available
-                    tar.extraction_filter = custom_filter
-                    tar.extractall(path=path)
-                    tar.close()
+                astronURL = 'https://www.astron.nl/iers'
+                
+                # untar the target at astronURL to path using the custom filter, do not be verbose
+                do_untar_url(astronURL, target, path, custom_filter)
 
                 # create a new readme.txt file
                 with open(readme_path,'w') as fid:

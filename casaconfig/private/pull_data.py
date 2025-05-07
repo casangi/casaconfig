@@ -107,7 +107,7 @@ def pull_data(path=None, version=None, force=False, logger=None, verbose=None):
 
     from casaconfig import data_available
     from casaconfig import get_data_info
-    from casaconfig import UnsetMeasurespath, BadLock, BadReadme, NotWritable
+    from casaconfig import UnsetMeasurespath, BadLock, BadReadme, NoNetwork, NotWritable, RemoteError
 
     from .print_log_messages import print_log_messages
     from .get_data_lock import get_data_lock

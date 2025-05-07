@@ -37,47 +37,15 @@ def measures_available():
 
     """
 
-    import html.parser
-    import urllib.request
-    import urllib.error
-    import ssl
-    import certifi
-
-    from casaconfig import RemoteError
-    from casaconfig import NoNetwork
-
-    from .have_network import have_network
-
-    if not have_network():
-        raise NoNetwork("No network, can not find the list of available data.")
-    
-    class LinkParser(html.parser.HTMLParser):
-        def reset(self):
-            super().reset()
-            self.rundataList = []
-
-        def handle_starttag(self, tag, attrs):
-            if tag == 'a':
-                for (name, value) in attrs:
-                    # only care if this is an href and the value starts with
-                    # WSRT_Measures and has 'tar' after character 15 to exclude the "WSRT_Measures.ztar" file
-                    # without relying on the specific type of compression or nameing in  more detail than that
-                    if name == 'href' and (value.startswith('WSRT_Measures') and (value.rfind('tar')>15)):
-                        # only add it to the list if it's not already there
-                        if (value not in self.rundataList):
-                            self.rundataList.append(value)
+    from .get_available_tarfiles import get_available_tarfiles
 
     try:
-        context = ssl.create_default_context(cafile=certifi.where())
-        with urllib.request.urlopen('https://www.astron.nl/iers', context=context, timeout=400) as urlstream:
-            parser = LinkParser()
-            encoding = urlstream.headers.get_content_charset() or 'UTF-8'
-            for line in urlstream:
-                parser.feed(line.decode(encoding))
-
-        # return the sorted list, earliest versions are first, newest is last
-        return sorted(parser.rundataList)
-
+        return get_available_tarfiles('https://www.astron.nl/iers', 'WSRT_Measures')
+    
+    except NoNetwork as exc:
+        # reraise this as is
+        raise exc
+    
     except urllib.error.URLError as urlerr:
         raise RemoteError("Unable to retrieve list of available measures versions : " + str(urlerr)) from None
         
@@ -87,5 +55,3 @@ def measures_available():
 
     # nothing to return if it got here, must have been an exception
     return []
-
-    

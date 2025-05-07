@@ -37,15 +37,11 @@ def do_pull_data(path, version, installed_files, currentVersion, currentDate, lo
     """
 
     import os
-    import sys
     from datetime import datetime
-    import ssl
-    import urllib.request
-    import certifi
-    import tarfile
     import shutil
 
     from .print_log_messages import print_log_messages
+    from .do_untar_url import do_untar_url
     
     readme_path = os.path.join(path, 'readme.txt')
 
@@ -81,27 +77,10 @@ def do_pull_data(path, version, installed_files, currentVersion, currentDate, lo
     # okay, safe to install the requested version
 
     goURL = 'https://go.nrao.edu/casarundata'
-    context = ssl.create_default_context(cafile=certifi.where())
 
-    # need to first resolve the go.nrao.edu URL to find the actual data URL
-    dataURLroot = urllib.request.urlopen(goURL, context=context).url
-    dataURL = os.path.join(dataURLroot, version)
+    # extract version from goURL to path, no custom extraction filter, verbose output, use the logger when set
+    do_untar_url(goURL, version, path, None, "downloading casarundata contents to ", logger)
     
-    with urllib.request.urlopen(dataURL, context=context, timeout=400) as tstream, tarfile.open(fileobj=tstream, mode='r|*') as tar :
-        l = int(tstream.headers.get('content-length', 0))
-        sizeString = "unknown size"
-        if (l>0): sizeString = ("%.0fM" % (l/(1024*1024)))
-        # use print directly to make use of the end argument
-        print('downloading casarundata contents to %s (%s) ... ' % (path,sizeString), file = sys.stdout, end="" )
-        sys.stdout.flush()
-        # also log it
-        if logger is not None: logger.post('downloading casarundata contents to %s ...' % path, 'INFO')
-        # use the 'data' filter if available, revert to previous 'fully_trusted' behavior of not available
-        tar.extraction_filter = getattr(tarfile, 'data_filter', (lambda member, path: member))
-        tar.extractall(path=path)
-        
-    print("done", file=sys.stdout)
-        
     # the tarball has been extracted to path/version
     # get the instaled files of files to be written to the readme file
     versdir = os.path.join(path,version[:version.index('.tar')])
