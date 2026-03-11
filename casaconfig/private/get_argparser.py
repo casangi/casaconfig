@@ -21,7 +21,7 @@ def get_argparser(add_help=False):
     import argparse as __argparse
 
     ## look for arguments affecting the configuration
-    parser = __argparse.ArgumentParser(add_help=add_help)
+    parser = __argparse.ArgumentParser(add_help=add_help, allow_abbrev=False)
     parser.add_argument( "--configfile",dest='configfile', default='~/.casa/config.py',
                          help='path to the user configuration file')
     parser.add_argument( "--noconfig", dest='noconfig', action='store_const', const=True, default=False,
