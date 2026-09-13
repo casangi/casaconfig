@@ -10,7 +10,7 @@ measurespath = "~/.casa/data"
 # tarballs having names following the form WSRT_Measures_YYYYMMDD-HHMMSS.*
 # WHere YYYYMMDD is a date and HHMMSS is a time, anything can come after the
 # .* but it should indicate a form of tarball, usually compressed, e.g. "ztar"
-measures_site = ["https://www.astron.nl/iers/", "https://go.nrao.edu/iers/"]
+measures_site = ["https://iers.astron.nl/", "https://go.nrao.edu/iers/"]
 
 # automatically update measures data if not current (measurespath must be owned by the user)
 # when data_auto_update is True then measures_auto_update MUST also be True

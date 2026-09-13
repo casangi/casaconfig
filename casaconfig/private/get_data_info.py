@@ -167,7 +167,7 @@ def get_data_info(path=None, logger=None, type=None):
                         if readmeContents is not None:
                             currentSite = readmeContents['site']
                             if currentSite is None:
-                                currentSite = 'https://www.astron.nl/iers/'
+                                currentSite = 'https://iers.astron.nl/'
                             currentVersion = readmeContents['version']
                             currentDate = readmeContents['date']
                             currentAge = (currentTime - os.path.getmtime(measuresreadme_path)) / secondsPerDay
