@@ -7,6 +7,8 @@ sitepackages = site.getsitepackages()[0]
 
 import casaconfig
 
+from casaconfig import config
+
 def setDefaultConfig():
     '''sets config to the default values'''
     from casaconfig import config
@@ -75,7 +77,7 @@ class casaconfig_test(unittest.TestCase):
         # if the data info is None then it populates it with the most recent measures and extracts the observatory table
         # the data info version can not be illegal or unknown (something unexpected is already there)
         # this function works as a test, but it happens on demand in an attempt to limit the calls to update_measures
-        
+
         dataInfo = casaconfig.get_data_info(self.testMeasPath, type='measures')
         if dataInfo is not None:
             version = dataInfo['version']
@@ -83,6 +85,19 @@ class casaconfig_test(unittest.TestCase):
 
             # it seems to be a valid measures installation, leave as is
             return
+
+        # NRAO measures don't come with the Observatories file, so measures_available is using the NRAO site then
+        # casarundata will need to be installed first
+        ma = casaconfig.measures_available()
+        if ma[0].find('nrao') >= 0:
+            # need casarundata, given the above this is probably missing, but check anyway
+            dataInfo = casaconfig.get_data_info(self.testMeasPath, type='casarundata')
+            if dataInfo is None or dataInfo['version']=="unknown" or dataInfo["version"]=="illegal":
+                rundataVers = casaconfig.data_available()[-1]
+                casaconfig.pull_data(self.testMeasPath, version=rundataVers)
+                # check that the version now looks good
+                dataInfo = casaconfig.get_data_info(self.testMeasPath, type='casarundata')
+                self.assertTrue(dataInfo['version']==rundataVers,f"unexpected casarundata version installed by populate_testmeasures at {self.testMeasPath} {rundataVers}")
 
         # install the most recent available
         # since this is new measures install at path it needs to extract the Observatory table, which requires force to be True
@@ -166,14 +181,49 @@ class casaconfig_test(unittest.TestCase):
         self.assertTrue(ref, "NotWritable Not Found")
 
     def test_casaconfig_measures_available(self):
-        '''Test That Today or Yesterday measures data is returned'''
+        '''Test that measures_available returns a recognized site as the first element and at least the first element matches the expected pattern for that site'''
+
+        ma = self.get_meas_avail()
+
+        # there should be at least 2 elements returned
+        self.assertTrue(len(ma)>2, msg="measueres_available did not return a list with at least 2 elements")
+
+        # is the first element, the site, in config.measures_site
+        self.assertTrue(ma[0] in config.measures_site, msg="measures_available returned an empty list or the first element is not in config.measures_site")
+
+        thisSite = ma[0]
+        print(f"thisSite = {thisSite}")
+
+        # is prefix WSRT or NRAO?
+        prefix = None
+        if (thisSite.find('astron')>=0):
+            prefix = 'WSRT'
+        elif (thisSite.find('nrao')>=0):
+            prefix = 'NRAO'
+        self.assertTrue(prefix is not None, msg='the site returned by measures_available is not Astron or NRAO')
+
+        # and at least one element after the site must match this pattern
+
+        # Note that this isn't a complete check that the first element after site is {site}_Measures_YYYYMMDD-HHMMSS.ztar
+        # because this doesn't check that the digits are valid for that position (month 00 to 12 for example)
+        # only that there are the expected number of digits in each place
+
+        pattern = rf"^.*{re.escape(prefix)}_Measures_\d{{8}}-\d{{6}}\.ztar$"
+
+        # at least one of the elements after the site must match that pattern
+        self.assertTrue(any(re.match(pattern, elem) for elem in ma[1:]))
+
+        # print a warning if the measures for today or yesterday can't be found at this site
 
         today = date.today()
         yesterday = today - timedelta(days=1)
-        measuresdata_today = "WSRT_Measures_{}-160001.ztar".format(today.strftime("%Y%m%d"))
-        measuresdata_yesterday= "WSRT_Measures_{}-160001.ztar".format(yesterday.strftime("%Y%m%d"))
 
-        self.assertTrue(any(elem in self.get_meas_avail() for elem in [measuresdata_today, measuresdata_yesterday]))
+        # can today or yesterday be found, any time
+        pattern_today = rf".*{prefix}_Measures_{today.strftime("%Y%m%d")}-\d{{6}}.ztar"
+        pattern_yesterday = rf".*{prefix}_Measures_{yesterday.strftime("%Y%m%d")}-\d{{6}}.ztar"
+
+        if not (any(re.match(pattern_today, elem) for elem in ma[1:])) or not (any(re.match(pattern_yesterday, elem) for elem in ma[1:])):
+            print(f"WARNING : a measures tarball for yesterday or today was not found at {thisSite}, it appears to be out of date")
 
     def test_casaconfig_measures_update(self):
         '''Test downgrade to upgrade measures data to location'''
@@ -975,7 +1025,7 @@ class casaconfig_test(unittest.TestCase):
         site_1_version = site_1_ma[-4]
 
         di = casaconfig.get_data_info(path=self.testMeasPath, type='measures')
-        print('di : %s' % str(di))
+        # print('di : %s' % str(di))
         
         for site, vers, altSite in [(site_0, site_0_version, site_1), (site_1, site_1_version, site_0)]:
              # let it find the site
